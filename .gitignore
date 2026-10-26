@@ -1,0 +1,10 @@
+*.apk
+*.so
+*.arz
+*.arc
+*.map
+*.zip
+SaveData/
+*backup*/
+node_modules/
+.env
