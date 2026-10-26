@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "status": "verified-stable-record-overrides",
+  "before": [
+    {
+      "record": "records\\xpack3\\items\\loottables\\weapons\\monster\\sword\\mi_l_potamoiwarrior.dbr",
+      "field": "bothPrefixSuffix",
+      "index": 165908,
+      "ok": 1,
+      "size": 588,
+      "value": 3
+    },
+    {
+      "record": "records\\item\\loottables\\torso\\mastertables\\monster\\e_ratmanchampion.dbr",
+      "field": "lootWeight2",
+      "index": 59699,
+      "ok": 1,
+      "size": 408,
+      "value": 4
+    },
+    {
+      "record": "records\\item\\loottables\\head\\mastertables\\monster\\l_ratmanchampion.dbr",
+      "field": "lootWeight2",
+      "index": 57989,
+      "ok": 1,
+      "size": 408,
+      "value": 4
+    }
+  ],
+  "inputBytes": 6075026,
+  "activation": "direct-engine-deserialize",
+  "after": [
+    {
+      "record": "records\\xpack3\\items\\loottables\\weapons\\monster\\sword\\mi_l_potamoiwarrior.dbr",
+      "field": "bothPrefixSuffix",
+      "index": 165908,
+      "ok": 1,
+      "size": 540,
+      "value": 35
+    },
+    {
+      "record": "records\\item\\loottables\\torso\\mastertables\\monster\\e_ratmanchampion.dbr",
+      "field": "lootWeight2",
+      "index": 59699,
+      "ok": 1,
+      "size": 408,
+      "value": 60
+    },
+    {
+      "record": "records\\item\\loottables\\head\\mastertables\\monster\\l_ratmanchampion.dbr",
+      "field": "lootWeight2",
+      "index": 57989,
+      "ok": 1,
+      "size": 408,
+      "value": 40
+    }
+  ],
+  "flag": 0,
+  "delayed": [
+    {
+      "record": "records\\xpack3\\items\\loottables\\weapons\\monster\\sword\\mi_l_potamoiwarrior.dbr",
+      "field": "bothPrefixSuffix",
+      "index": 165908,
+      "ok": 1,
+      "size": 540,
+      "value": 35
+    },
+    {
+      "record": "records\\item\\loottables\\torso\\mastertables\\monster\\e_ratmanchampion.dbr",
+      "field": "lootWeight2",
+      "index": 59699,
+      "ok": 1,
+      "size": 408,
+      "value": 60
+    },
+    {
+      "record": "records\\item\\loottables\\head\\mastertables\\monster\\l_ratmanchampion.dbr",
+      "field": "lootWeight2",
+      "index": 57989,
+      "ok": 1,
+      "size": 408,
+      "value": 40
+    }
+  ]
+}

@@ -1,14 +1,14 @@
 # Titan Quest Android CustomMaps research
 
-An experimental investigation of PC-authored custom mods on Titan Quest Ultimate for Android. This is a research log, not a working mod loader or a compatibility promise.
+An experimental investigation of PC-authored custom mods on Titan Quest Ultimate for Android. This is a research log, not a general-purpose mod loader or a compatibility promise.
 
 ## Current status
 
 On Android build 3.0.5339, retained code references CustomMaps discovery and map loading. A public LootPlus 1.3 bounce mod has been copied to the expected CustomMaps directory on a rooted Redmi Note 8. Device file hashes were recorded.
 
-**Successful discovery by the game, activation, and gameplay are not yet confirmed.** The observed mobile main menu showed no Custom Game button before staging or after the post-staging restart. The character-selection screen was subsequently inspected; no custom-map selector was visible in the observed view.
+**Runtime database overrides are now confirmed through an experimental loader.** The unmodified LootPlus 1.3 ARZ changed three live loot fields from 3/4/4 to the expected 35/60/40 in two fresh game processes. The normal mobile menu still has no observed mod selector; ARC/map loading, gameplay effects, and save/reload remain untested.
 
-See [the initial staging report](reports/2026-10-26-lootplus.md).
+See the [activation report](reports/2026-10-26-database-activation.md) and the [initial staging report](reports/2026-10-26-lootplus.md). This is a database-loading proof, not a complete Custom Game port.
 
 ## Scope
 
@@ -21,7 +21,7 @@ No game binaries, save files, third-party mod archives, credentials, or decompil
 
 ## Next steps
 
-1. Trace how the mobile character-selection menu selects its game mode.
-2. If no selector is exposed, measure the retained discovery path separately from attempting activation.
-3. Investigate mod-name propagation before implementing a launcher.
-4. Test loading on a disposable character, followed by save/reload only if loading succeeds.
+1. Test database overrides during gameplay on a disposable character.
+2. Check cache invalidation and save/reload behavior.
+3. Investigate ARC/map mounting and mod-name propagation separately.
+4. Design a reversible selector only after those results.

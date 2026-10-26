@@ -1,0 +1,56 @@
+[
+  {
+    "record": "records\\xpack3\\items\\loottables\\weapons\\monster\\sword\\mi_l_potamoiwarrior.dbr",
+    "field": "bothPrefixSuffix",
+    "before": {
+      "type": 0,
+      "offset": 44,
+      "values": [
+        3
+      ]
+    },
+    "after": {
+      "type": 0,
+      "offset": 44,
+      "values": [
+        35
+      ]
+    }
+  },
+  {
+    "record": "records\\item\\loottables\\torso\\mastertables\\monster\\e_ratmanchampion.dbr",
+    "field": "lootWeight2",
+    "before": {
+      "type": 0,
+      "offset": 188,
+      "values": [
+        4
+      ]
+    },
+    "after": {
+      "type": 0,
+      "offset": 188,
+      "values": [
+        60
+      ]
+    }
+  },
+  {
+    "record": "records\\item\\loottables\\head\\mastertables\\monster\\l_ratmanchampion.dbr",
+    "field": "lootWeight2",
+    "before": {
+      "type": 0,
+      "offset": 188,
+      "values": [
+        4
+      ]
+    },
+    "after": {
+      "type": 0,
+      "offset": 188,
+      "values": [
+        40
+      ]
+    }
+  }
+]
