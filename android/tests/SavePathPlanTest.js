@@ -12,6 +12,11 @@ for (const relative of ['', '/Main/Hero/Player.chr', '/Main/Hero/Backup/Player.c
   assert.equal(plan(result.target).kind, 'already-profile');
 }
 assert.equal(plan(live + '//Sys///Main/winsys.dxg').target, profile + '/Sys/Main/winsys.dxg');
+// Root shape observed on build 5364; synthetic destination, no device I/O.
+const observed = '/storage/emulated/0/Android/data/com.hg.titanquestultimate/files/Preferences/SaveData/';
+assert.equal(ctx.tqPlanSavePath(observed, profile + '/', observed).target, profile);
+assert.equal(ctx.tqPlanSavePath(observed, profile, observed + 'Main/Hero/Player.chr').target,
+    profile + '/Main/Hero/Player.chr');
 for (const p of [live + 'Other/file', '/elsewhere/file', live + '/../file',
     live + '/./file', live + '/bad\0file', live + '\\Main', 'relative', null,
     live + '/' + 'x'.repeat(4096)]) assert.throws(() => plan(p));
