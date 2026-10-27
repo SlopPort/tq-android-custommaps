@@ -119,3 +119,8 @@ Map integration follow-up: source now prepares a fingerprint-checked inactive
 Gladiators resource plan. Device preflight passed for seven ARCs without loading
 a player; see reports/2026-10-27-map-preflight.md. Manager UI text is compiled,
 not installed. Save isolation and native plan consumption remain unfinished.
+
+Save-profile follow-up: independent snapshot-backed storage and the manager action
+are implemented in source. Host/Android synthetic write-separation tests pass.
+See reports/2026-10-27-save-profiles.md. Runtime save-root routing is not implemented;
+this must not be presented as gameplay/save isolation yet.

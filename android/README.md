@@ -64,3 +64,12 @@ Profile matching uses sizes and FNV-1a fingerprints to detect accidental specime
 changes, not cryptographic authenticity or malware safety. Unknown profiles,
 missing/changed required archives and invalid profile paths are refused. Extra
 files are not mounted or treated as verified by this check.
+
+### Separate save copies (source update)
+
+The manager source can prepare a complete SaveData copy for a selected library
+entry. An existing copy is never replaced. The copy includes a checksummed
+snapshot and consumes additional storage. This action requires closing the game.
+It does not yet make the game use the copied saves: runtime profile routing is
+unfinished. The storage test passed on host and Android synthetic data; the new
+manager action is compiled but not installed/UI-tested.

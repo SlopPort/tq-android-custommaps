@@ -117,6 +117,22 @@ public final class ModManagerActivity extends Activity {
             list.addView(row);
             Button choose = new Button(this); choose.setText("Select this mod");
             choose.setOnClickListener(v -> select(dir.getName())); list.addView(choose);
+            if (getPackageName().equals("com.hg.titanquestultimate")) {
+                Button profile = new Button(this);
+                boolean prepared = new File(getFilesDir(), "tqmods/save-profiles/" + dir.getName() + "/SaveData").isDirectory();
+                profile.setText(prepared ? "Separate save copy already prepared" : "Prepare separate save copy");
+
+                profile.setOnClickListener(v -> {
+                    if (prepared) { status.setText("A separate copy already exists. It has not been replaced; game use is not enabled yet."); return; }
+                    if (!canBackUp()) return;
+                    new android.app.AlertDialog.Builder(this).setTitle("Prepare copies for this mod?")
+                        .setMessage("Copies all current characters and their SaveData files into a separate profile. Originals remain unchanged. Playing from this profile is not enabled yet. Existing profiles are never replaced.")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Prepare copy", (dialog, which) -> prepareSaveProfile(dir.getName())).show();
+                });
+                list.addView(profile);
+            }
+
         }
         runtime.setText("No runtime confirmation in this process.");
         try {
@@ -212,6 +228,24 @@ public final class ModManagerActivity extends Activity {
             status.setText("Cannot verify that the game is stopped. Backup was not started."); return false;
         }
     }
+    private void prepareSaveProfile(String id) {
+        if (!canBackUp()) return;
+        ownsOperation = true; importPending = true; updateControls();
+        status.setText("Preparing separate save copy. Please wait...");
+        io.execute(() -> {
+            String message;
+            try {
+                File external = getExternalFilesDir(null);
+                if (external == null) throw new IOException("Game storage unavailable");
+                // canBackUp checked the current process; the busy gate blocks game startup.
+                SaveProfileStore.create(new File(external, "Preferences/SaveData"),
+                    new File(getFilesDir(), "tqmods/save-profiles"), id, false);
+                message = "Separate save copy prepared. Originals are unchanged. The game does not use this profile yet.";
+            } catch (Exception error) { message = "Could not prepare save copy: " + error.getMessage(); }
+            final String result = message;
+            runOnUiThread(() -> { importPending = false; if (!isDestroyed()) { status.setText(result); refresh(); } });
+        });
+    }
     private void exportBackup(android.net.Uri target) {
         ownsOperation = true;
         importPending = true; updateControls(); status.setText("Exporting character backup. Please wait...");
@@ -232,7 +266,7 @@ public final class ModManagerActivity extends Activity {
                     byte[] buffer = new byte[65536]; int read;
                     while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
                 }
-                message = "Backup exported: " + count + " files with SHA-256 checksums. Keep it outside the game's app storage. Restore is not automated.";
+                message = "Backup exported: " + count + " files with SHA-256 checksums. Keep it outside the game's app storage. Restore is available through this manager.";
             } catch (Exception error) {
                 message = "Backup failed: " + error.getMessage() + ". Do not use the destination file; it may be incomplete.";
             } finally { if (snapshot != null) snapshot.delete(); }
