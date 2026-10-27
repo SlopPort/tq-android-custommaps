@@ -4,6 +4,7 @@ vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../bootstrap/plan-save-
 const live = '/external/Preferences/SaveData', profile = '/private/profiles/test/SaveData';
 const plan = p => ctx.tqPlanSavePath(live, profile, p);
 for (const relative of ['', '/Main/Hero/Player.chr', '/Main/Hero/Backup/Player.chr',
+    '/Sys/winsys.dxg', '/Sys/winsys.dxb', '/Sys/0miscsys.dxg', '/Sys/2miscsys.dxb',
     '/Sys/Main/winsys.dxg', '/Sys/Main/winsys.dxb', '/Sys/Main/0miscsys.dxg',
     '/Sys/Main/1miscsys.dxb']) {
   const result = plan(live + relative);
