@@ -41,7 +41,8 @@ if a.enable_supported_databases:
         selectionRequest='/data/user/0/com.hg.titanquestultimate/files/tqmods/request.json',
         libraryRoot=['/data/user/0/com.hg.titanquestultimate/files/tqmods/library',
                      '/data/data/com.hg.titanquestultimate/files/tqmods/library'],
-        profiles=json.loads((root / 'android/bootstrap/profiles-5364.json').read_text()))
+        profiles=json.loads((root / 'android/bootstrap/profiles-5364.json').read_text())
+            + json.loads((root / 'android/bootstrap/map-profiles-5364.json').read_text()))
 (lib / 'libtqmods.script.so').write_bytes(script)
 (lib / 'libtqmods.config.so').write_text(json.dumps({
     'interaction': {'type': 'script', 'path': 'libtqmods.script.so', 'parameters': parameters},

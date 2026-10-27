@@ -114,3 +114,8 @@ Localization follow-up: the wide-string workaround displayed the Gladiators
 location name on device; the narrow loader produced an empty value despite tag
 presence. See reports/2026-10-27-gladiators-localization.md. ASCII parser tests
 pass, but manager wiring, other encodings and remaining tag consumers are open.
+
+Map integration follow-up: source now prepares a fingerprint-checked inactive
+Gladiators resource plan. Device preflight passed for seven ARCs without loading
+a player; see reports/2026-10-27-map-preflight.md. Manager UI text is compiled,
+not installed. Save isolation and native plan consumption remain unfinished.

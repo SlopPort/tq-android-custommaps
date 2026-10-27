@@ -51,3 +51,16 @@ the game APK on the test phone. No multi-mod or custom-map UI is enabled by it.
 The ASCII mod-text parser is likewise a tested building block, not yet connected
 to the installed loader. The separate Gladiators text experiment is described in
 the localization report. Non-ASCII input is explicitly unsupported by this parser.
+
+### Custom-map preflight
+
+The bootstrap source can recognize the recorded Gladiators specimen and check its
+database plus seven required ARCs before producing an inactive map plan. The
+manager has a separate message for this state. No custom-map database, resources,
+text or world is activated by this path. Map startup and character isolation are
+still pending integration. Old installed APKs do not acquire this UI automatically.
+
+Profile matching uses sizes and FNV-1a fingerprints to detect accidental specimen
+changes, not cryptographic authenticity or malware safety. Unknown profiles,
+missing/changed required archives and invalid profile paths are refused. Extra
+files are not mounted or treated as verified by this check.

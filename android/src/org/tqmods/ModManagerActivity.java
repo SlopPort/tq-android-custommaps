@@ -132,6 +132,7 @@ public final class ModManagerActivity extends Activity {
                 if (detail.equals("overrides-verified")) message = "Database changes verified in this process. Gameplay compatibility is not guaranteed.";
                 else if (detail.equals("baseline-verified")) message = "The monitored database values match the unmodified game.";
                 else if (detail.equals("vanilla")) message = "No mod requested for this process.";
+                else if (detail.equals("map-preflight-verified")) message = "Map files match the tested package. This loader has not activated the map.";
                 else if (detail.equals("unsupported")) message = "Selected file is not supported yet. This loader did not activate it.";
                 else if (detail.contains("error") || detail.contains("mismatch") || detail.equals("refused"))
                     message = "Activation check failed. Close the app before playing or retrying.";

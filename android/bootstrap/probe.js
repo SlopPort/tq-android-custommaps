@@ -67,6 +67,8 @@ rpc.exports.init = function (stage, parameters) {
                   const selection = tqResolveSelection(File.readAllText(parameters.selectionRequest),
                     parameters.profiles || [], parameters.libraryRoot, path => File.readAllBytes(path));
                   menu.selection = {status:selection.status,id:selection.id,name:selection.name};
+                  if (selection.status === 'map-preflight-verified')
+                    menu.map = {status:'prepared-not-active',map:selection.plan.map,resources:selection.plan.resources.length};
                   databaseConfig = selection.status === 'recognized' ? selection.config : null;
                   if (selection.status === 'vanilla' && parameters.verifyVanilla && parameters.profiles.length > 0)
                     databaseConfig = {...parameters.profiles[0],activate:false};

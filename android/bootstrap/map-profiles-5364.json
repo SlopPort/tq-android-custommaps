@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Gladiators (tested specimen; preflight only)",
+    "kind": "custom-map",
+    "size": 274580,
+    "fnv1a": "084f8518",
+    "databaseRelative": "database/Gladiators - Gods of the Arena.arz",
+    "map": "maps/gladiators.map",
+    "resources": [
+      {
+        "path": "resources/Effects.arc",
+        "size": 2856,
+        "fnv1a": "b03d0d83"
+      },
+      {
+        "path": "resources/InGameUI.arc",
+        "size": 35452,
+        "fnv1a": "576aaafc"
+      },
+      {
+        "path": "resources/Maps.arc",
+        "size": 520497,
+        "fnv1a": "099b3e33"
+      },
+      {
+        "path": "resources/Quests.arc",
+        "size": 17058,
+        "fnv1a": "f0ba7039"
+      },
+      {
+        "path": "resources/SoundsAndMusic.arc",
+        "size": 4379215,
+        "fnv1a": "8ac41281"
+      },
+      {
+        "path": "resources/Text.arc",
+        "size": 2450,
+        "fnv1a": "0dec6139"
+      },
+      {
+        "path": "resources/Textures.arc",
+        "size": 941355,
+        "fnv1a": "950e36fb"
+      }
+    ]
+  }
+]
