@@ -1,32 +1,53 @@
-# Rootless mod library prototype
-
-Status: Java compilation and host importer tests passed. Embedded in an unsigned local APK; not installed or connected to engine activation.
-
-`ModManagerActivity` is intended to be embedded in a locally patched, user-supplied game APK. It opens Android's document picker and copies selected ZIP/ARZ content into that application's private `files/tqmods/library` directory. It is designed to operate without root, ADB, broad storage permission, a companion file manager, or a network listener at runtime. A separate app would have a different UID and cannot provide the missing engine integration.
-
-The current build registers a non-exported activity and an exported launcher alias. An in-game entry point remains future work. On-device launch and import are untested. Do not expose game-private files through an unrestricted provider. This repository contains original importer code only; no game APK, signing key, or proprietary binary is distributed.
-
-The unsigned local APK predates the MAP-import fix. The capabilities below describe current source; rebuilding and device verification remain pending.
-
-## Implemented
-
-- Document picker, background import, readable imported names and explicit unverified status.
-- UUID staging and commit on the same filesystem; failed imports are removed.
-- ZIP path containment, path depth, entry count, expanded size, case-insensitive duplicate and extension checks.
-- Exactly one ARZ; ARC, MAP and text companion files allowed. Recognizes the 04 00 03 00 ARZ prefix from the actual LootPlus specimen. This is not full archive or engine validation.
-- 512 MiB expanded limit and 4,096 entries. These intentionally exclude some large maps; limits are prototype constraints.
-
-## Required next steps
-
-1. Sign locally, validate device launch, and add an in-process bootstrap; verify operation without root. Re-signing changes app identity for updates and may affect licensing or asset delivery. Preserve save/APK backups and do not bypass entitlement checks.
-2. Use a self-contained script-mode Frida Gadget prototype or a native bridge, with no listener. Startup must return before waiting for engine initialization: blocking Gadget init while waiting for the engine can deadlock startup.
-3. Move to one in-process owner for all hooks. Never run the existing root injector alongside embedded Gadget.
-4. Add a version-gated database loader with main-thread execution before any character is loaded. Test on a disposable character. Rootless bootstrap and 5364 loader still require device proof.
-5. Add selection, restart-to-apply, vanilla mode and mod-specific character policy. Import alone must never report activation.
-6. Validate ARC mounting and custom maps separately. Database overrides on 5339 do not establish 5364 or map compatibility.
-
-## Tests
-
-Compile `src/org/tqmods/*.java` with Android API 36 android.jar. `tests/ModStoreTest.java` runs on a host JDK; optionally pass an author-downloaded LootPlus ARZ path. Checks valid standalone/wrapped imports, real specimen, path traversal, duplicate case variants, multiple ARZ files, disallowed native-code payloads, bad headers and failed-import rollback. Device UI, storage-provider failures, low-space behavior and native activation are untested.
-
-References: [Android document picker](https://developer.android.com/training/data-storage/shared/documents-files), [Android storage restrictions](https://developer.android.com/about/versions/11/privacy/storage), [Frida Gadget](https://frida.re/docs/gadget/).
+# Rootless mod library prototype
+
+Status: host tests, standalone import and embedded LootPlus import/selection/activation passed their laboratory checks. The local 5364 build supports fresh-start selection and verified return of three monitored fields to vanilla. This is not a general mod loader or a verified stock-phone setup.
+
+`ModManagerActivity` is intended to be embedded in a locally patched, user-supplied game APK. It opens Android's document picker and copies selected ZIP/ARZ content into that application's private `files/tqmods/library` directory. It is designed to operate without root, ADB, broad storage permission, a companion file manager, or a network listener at runtime. A separate app would have a different UID and cannot provide the missing engine integration.
+
+The current build registers a non-exported manager activity and an exported launcher alias in a separate task. An in-game entry point remains future work. Standalone XMAX x2 import and persistence passed device tests, but XMAX activation is unsupported. Embedded LootPlus activation has separate evidence. Do not expose game-private files through an unrestricted provider. No game APK, signing key, or proprietary binary is distributed.
+
+See the [manager workflow report](../reports/2026-10-27-manager-workflow.md) for the tested artifact and process-level evidence. Source capability does not imply device verification.
+
+## Implemented
+
+- Document picker, background import, readable imported names and explicit unverified status.
+
+- UUID staging and commit on the same filesystem; failed imports are removed.
+
+- ZIP path containment, path depth, entry count, expanded size, case-insensitive duplicate and extension checks.
+
+- One ARZ per imported variant; bundles with separate database folders show a variant picker. ARC, MAP and text companion files allowed. Recognizes the 04 00 03 00 ARZ prefix from the actual LootPlus specimen. This is not full archive or engine validation.
+
+- 512 MiB expanded limit and 4,096 entries. These intentionally exclude some large maps; limits are prototype constraints.
+
+## Required next steps
+
+1. Extend the verified local signing, launch and bootstrap experiment to a supported store specimen and stock-phone setup. Re-signing changes app identity for updates and may affect licensing or asset delivery. Preserve save/APK backups and do not bypass entitlement checks.
+
+2. Extend the tested script-mode Frida Gadget bootstrap, keeping its no-listener design. Startup must return before waiting for engine initialization: blocking Gadget init while waiting for the engine can deadlock startup.
+
+3. Integrate the paused Perf/Traders features into the single embedded runtime. Never run the existing root injector alongside embedded Gadget.
+
+4. Extend the existing fingerprint-gated 5364 loader only after validating each additional specimen. The current loader checks for an absent player before database mutation. The rooted-phone test used embedded Gadget without root injection.
+
+5. Add and test a mod-specific character policy. Restart-to-apply and vanilla sentinel restoration are verified; save isolation is not implemented. Import alone must never report activation.
+
+6. Validate ARC mounting and custom maps separately. Database overrides do not establish map compatibility.
+
+## Tests
+
+Compile `src/org/tqmods/*.java` with Android API 36 android.jar. `tests/ModStoreTest.java` runs on a host JDK; optionally pass an author-downloaded LootPlus ARZ path. Checks valid standalone/wrapped imports, real specimen, path traversal, duplicate case variants, multiple ARZ files, disallowed native-code payloads, bad headers and failed-import rollback. Embedded LootPlus activation has device evidence; storage-provider failures and low-space behavior still need device tests.
+
+References: [Android document picker](https://developer.android.com/training/data-storage/shared/documents-files), [Android storage restrictions](https://developer.android.com/about/versions/11/privacy/storage), [Frida Gadget](https://frida.re/docs/gadget/).
+
+### Resource inventory (source update)
+
+Selection now records the selected variant's ARC paths and sizes alongside its
+database. This is an inventory for future guarded activation, not permission to
+mount archives. The current embedded resolver does not consume this list. The
+source compiles and synthetic inventory tests pass; this update has not replaced
+the game APK on the test phone. No multi-mod or custom-map UI is enabled by it.
+
+The ASCII mod-text parser is likewise a tested building block, not yet connected
+to the installed loader. The separate Gladiators text experiment is described in
+the localization report. Non-ASCII input is explicitly unsupported by this parser.

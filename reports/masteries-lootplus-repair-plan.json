@@ -1,0 +1,96 @@
+{
+  "status": "PROPOSED_NOT_APPLIED",
+  "masteriesSha256": "8d392325a5e213cf80c99374d315ec2c439f14426fb22736859661d0a8c85654",
+  "lootplusSha256": "c9fc86f1229b1f0270c71a6df6338d01b3c5177a580352b2942681aeb7dd7b0c",
+  "changes": [
+    {
+      "record": "records\\item\\loottables\\arms\\mastertables\\monster\\e_gorgonarcher.dbr",
+      "field": "lootWeight2",
+      "masteries": [
+        0,
+        [
+          4
+        ]
+      ],
+      "lootplus": [
+        0,
+        [
+          20
+        ]
+      ],
+      "proposedWinner": "LootPlus",
+      "reason": "Preserve LootPlus loot behavior; preserve all other Masteries fields"
+    },
+    {
+      "record": "records\\item\\loottables\\arms\\mastertables\\monster\\l_gorgonarcher.dbr",
+      "field": "lootWeight2",
+      "masteries": [
+        0,
+        [
+          4
+        ]
+      ],
+      "lootplus": [
+        0,
+        [
+          20
+        ]
+      ],
+      "proposedWinner": "LootPlus",
+      "reason": "Preserve LootPlus loot behavior; preserve all other Masteries fields"
+    },
+    {
+      "record": "records\\item\\loottables\\arms\\monster\\li_gorgonarcher.dbr",
+      "field": "bothPrefixSuffix",
+      "masteries": [
+        0,
+        [
+          2
+        ]
+      ],
+      "lootplus": [
+        0,
+        [
+          35
+        ]
+      ],
+      "proposedWinner": "LootPlus",
+      "reason": "Preserve LootPlus loot behavior; preserve all other Masteries fields"
+    },
+    {
+      "record": "records\\item\\loottables\\arms\\monster\\li_gorgonarcher.dbr",
+      "field": "brokenOnly",
+      "masteries": null,
+      "lootplus": [
+        0,
+        [
+          0
+        ]
+      ],
+      "proposedWinner": "LootPlus",
+      "reason": "Preserve LootPlus loot behavior; preserve all other Masteries fields"
+    },
+    {
+      "record": "records\\item\\loottables\\head\\mastertables\\monster\\l_centaur.dbr",
+      "field": "lootWeight2",
+      "masteries": [
+        0,
+        [
+          4
+        ]
+      ],
+      "lootplus": [
+        0,
+        [
+          20
+        ]
+      ],
+      "proposedWinner": "LootPlus",
+      "reason": "Preserve LootPlus loot behavior; preserve all other Masteries fields"
+    }
+  ],
+  "limitations": [
+    "Does not resolve mobile engine settings or resources",
+    "Requires an ARZ writer and runtime regression before use"
+  ]
+}

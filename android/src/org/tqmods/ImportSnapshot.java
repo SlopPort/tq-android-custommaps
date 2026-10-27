@@ -1,0 +1,29 @@
+package org.tqmods;
+import java.io.*;
+
+/** Bounded private copy: selection and import read the same bytes. */
+public final class ImportSnapshot implements Closeable {
+    private final File file;
+    public final String name;
+    private ImportSnapshot(File file, String name) { this.file=file; this.name=name; }
+    public static ImportSnapshot create(File directory, InputStream input, String name) throws IOException {
+        if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("Cannot create import cache");
+        File file=File.createTempFile("mod-", ".input", directory);
+        boolean ok=false;
+        try {
+            try(OutputStream out=new FileOutputStream(file)) {
+                byte[] bytes=new byte[65536]; long total=0; int n;
+                while((n=input.read(bytes))!=-1) {
+                    total+=n;
+                    if(total>512L*1024*1024) throw new IOException("Input exceeds 512 MiB limit");
+                    out.write(bytes,0,n);
+                }
+            }
+            ok=true; return new ImportSnapshot(file,name);
+        } finally { if(!ok && file.exists() && !file.delete()) file.deleteOnExit(); }
+    }
+    public InputStream open() throws IOException { return new FileInputStream(file); }
+    public void close() throws IOException {
+        if(file.exists() && !file.delete()) throw new IOException("Cannot remove temporary import copy");
+    }
+}

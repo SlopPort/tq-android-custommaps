@@ -1,0 +1,15 @@
+const assert=require('assert'),vm=require('vm'),fs=require('fs'),path=require('path');
+const ctx={Uint8Array};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../bootstrap/resolve-selection.js'),'utf8'),ctx);
+const id='00000000-0000-0000-0000-000000000001',root='/private/library';
+const bytes=new Uint8Array([1,2,3]).buffer;
+let h=2166136261;for(const b of [1,2,3])h=Math.imul(h^b,16777619)>>>0;
+const profiles=[{name:'fixture',size:3,fnv1a:h.toString(16)}];
+let reads=0;const run=r=>ctx.tqResolveSelection(JSON.stringify(r),profiles,root,()=>{reads++;return bytes;});
+assert.equal(run({schema:1,id:null,database:null}).status,'vanilla');assert.equal(reads,0);
+const request={schema:1,id,database:root+'/'+id+'/database/mod.arz',size:3};
+assert.equal(run(request).status,'recognized');assert.equal(reads,1);
+assert.equal(run({...request,size:999}).status,'unsupported');assert.equal(reads,1);
+assert.equal(ctx.tqResolveSelection(JSON.stringify({...request,database:'/alias/'+id+'/database/mod.arz'}),profiles,[root,'/alias'],()=>bytes).status,'recognized');
+assert.throws(()=>ctx.tqResolveSelection(JSON.stringify({...request,database:'/other-app/'+id+'/database/mod.arz'}),profiles,[root,'/alias'],()=>bytes));
+for(const change of [{schema:2},{id:'../bad'},{database:'/external/mod.arz'},{database:root+'/'+id+'/../mod.arz'},{database:root+'/'+id+'/bad\\mod.arz'}])assert.throws(()=>run({...request,...change}));
+console.log('PASS: vanilla, supported fingerprint, unsupported size without read, schema and path rejection');

@@ -1,0 +1,14 @@
+const assert=require('assert'),fs=require('fs'),vm=require('vm'),path=require('path');
+const ctx={Uint8Array};
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../bootstrap/parse-mod-text.js'),'utf8'),ctx);
+const parse=s=>ctx.tqParseAsciiModText(Uint8Array.from(Buffer.from(s,'ascii')).buffer);
+const rows=parse('== Heading ==\r\n// comment\r\ntagPlace=Room=One\r\ntagEmpty=');
+assert.equal(rows.length,2);assert.equal(rows[0].value,'Room=One');assert.equal(rows[1].value,'');
+assert.throws(()=>parse('tagA=a\ntagA=b'),/Duplicate/);
+assert.throws(()=>parse('tagA='+ 'x'.repeat(4097)),/line exceeds/);
+assert.throws(()=>parse('x'.repeat(65537)),/64 KiB/);
+assert.throws(()=>ctx.tqParseAsciiModText(Uint8Array.from([255,254,97,0]).buffer),/encoding/);
+assert.throws(()=>ctx.tqParseAsciiModText(Uint8Array.from([0xc3,0xa9]).buffer),/encoding/);
+assert.equal(parse('tagA=A\ntagB=B').length,2);
+assert.equal(parse('notATag=ignore').length,0);
+console.log('PASS: ASCII tags, CRLF, first equals, empty value, duplicate/size/encoding refusal');

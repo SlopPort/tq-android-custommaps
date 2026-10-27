@@ -1,5 +1,14 @@
 # Research tools
 
+`compare-mod-records.py` compares two locally extracted ARZ v3 databases without changing them:
+
+```text
+python tools/compare-mod-records.py first.arz second.arz
+python android/tests/ModOverlapTest.py
+```
+
+This is a trusted-input research parser, not a hardened importer. It resolves each database's string table before comparing shared records and lists differing fields. Zero overlapping records does not prove compatibility. It does not examine ARC files, scripts, references or gameplay and never merges or activates mods. See the [tested pair matrix](../reports/2026-10-27-mod-combinations.md).
+
 `find-sentinels.py` reads local stock and LootPlus ARZ files and writes three differing numeric loot fields:
 
 ```text
@@ -16,4 +25,4 @@ The on-device experiment used the existing tq-android-perf single-injection add-
 
 The result is written to the game's private cache as `tq-custommaps-proof.json`. `verified-stable-record-overrides` means the three sampled database fields matched the mod immediately and at the delayed check. It does not mean gameplay or save compatibility was tested.
 
-Disable the test add-on and restart the game to remove the runtime import. Staged CustomMaps files remain. No game binaries or mod archives are distributed here.
+Disable the test add-on and restart the game to remove the runtime import. Staged CustomMaps files remain. No game binaries or mod archives are distributed here.

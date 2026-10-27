@@ -1,0 +1,27 @@
+[
+  {
+    "size": 6075026,
+    "fnv1a": "b6427708",
+    "records": [
+      {
+        "record": "records\\xpack3\\items\\loottables\\weapons\\monster\\sword\\mi_l_potamoiwarrior.dbr",
+        "offset": 44,
+        "before": 3,
+        "after": 35
+      },
+      {
+        "record": "records\\item\\loottables\\torso\\mastertables\\monster\\e_ratmanchampion.dbr",
+        "offset": 188,
+        "before": 4,
+        "after": 60
+      },
+      {
+        "record": "records\\item\\loottables\\head\\mastertables\\monster\\l_ratmanchampion.dbr",
+        "offset": 188,
+        "before": 4,
+        "after": 40
+      }
+    ],
+    "name": "LootPlus 1.3 (tested specimen)"
+  }
+]

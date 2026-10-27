@@ -16,5 +16,6 @@ jobs:
       - name: Test importer with synthetic data only
         run: |
           mkdir -p /tmp/tqmods-classes
-          javac -d /tmp/tqmods-classes android/src/org/tqmods/ModStore.java android/tests/ModStoreTest.java
+          javac -encoding UTF-8 -d /tmp/tqmods-classes android/src/org/tqmods/ModStore.java android/tests/ModStoreTest.java android/tests/VariantSyntheticTest.java
           java -cp /tmp/tqmods-classes ModStoreTest
+          java -cp /tmp/tqmods-classes VariantSyntheticTest
