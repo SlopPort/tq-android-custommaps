@@ -16,4 +16,4 @@ The on-device experiment used the existing tq-android-perf single-injection add-
 
 The result is written to the game's private cache as `tq-custommaps-proof.json`. `verified-stable-record-overrides` means the three sampled database fields matched the mod immediately and at the delayed check. It does not mean gameplay or save compatibility was tested.
 
-Disable the test add-on and restart the game to remove the runtime import. Staged CustomMaps files remain. No game binaries or mod archives are distributed here.
+Disable the test add-on and restart the game to remove the runtime import. Staged CustomMaps files remain. No game binaries or mod archives are distributed here.

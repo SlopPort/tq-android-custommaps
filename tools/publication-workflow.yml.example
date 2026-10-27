@@ -1,0 +1,20 @@
+name: Publication hygiene
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  source-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test and run publication guard
+        run: |
+          python3 tools/check-publication.py --self-test
+          python3 tools/check-publication.py
+      - name: Test importer with synthetic data only
+        run: |
+          mkdir -p /tmp/tqmods-classes
+          javac -d /tmp/tqmods-classes android/src/org/tqmods/ModStore.java android/tests/ModStoreTest.java
+          java -cp /tmp/tqmods-classes ModStoreTest
