@@ -1,0 +1,178 @@
+[
+  {
+    "name": "_ZN4GAME16CloudSaveManager27SaveAllCharactersAndCaravanEv",
+    "rva": 14003388,
+    "bytes": [
+      255,
+      195,
+      7,
+      209,
+      252,
+      111,
+      25,
+      169,
+      250,
+      103,
+      26,
+      169,
+      248,
+      95,
+      27,
+      169
+    ]
+  },
+  {
+    "name": "_ZN4GAME4Game8LoadGameERKNS0_18SaveGameInfoStructEb",
+    "rva": 13063888,
+    "bytes": [
+      252,
+      15,
+      26,
+      248,
+      250,
+      103,
+      1,
+      169,
+      248,
+      95,
+      2,
+      169,
+      246,
+      87,
+      3,
+      169
+    ]
+  },
+  {
+    "name": "_ZNK4GAME4Game21GetUserSaveDataFolderEv",
+    "rva": 13033476,
+    "bytes": [
+      255,
+      3,
+      1,
+      209,
+      243,
+      19,
+      0,
+      249,
+      253,
+      123,
+      3,
+      169,
+      253,
+      195,
+      0,
+      145
+    ]
+  },
+  {
+    "name": "_ZN4GAME18UICaravanInventory9StreamOutERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+    "rva": 13854464,
+    "bytes": [
+      255,
+      3,
+      2,
+      209,
+      246,
+      87,
+      5,
+      169,
+      244,
+      79,
+      6,
+      169,
+      253,
+      123,
+      7,
+      169
+    ]
+  },
+  {
+    "name": "_ZN4GAME16CloudSaveManager11SaveCaravanEv",
+    "rva": 14002600,
+    "bytes": [
+      255,
+      3,
+      2,
+      209,
+      243,
+      51,
+      0,
+      249,
+      253,
+      123,
+      7,
+      169,
+      253,
+      195,
+      1,
+      145
+    ]
+  },
+  {
+    "name": "_ZN4GAME18UICaravanInventory8StreamInERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+    "rva": 13852264,
+    "bytes": [
+      255,
+      67,
+      3,
+      209,
+      248,
+      95,
+      9,
+      169,
+      246,
+      87,
+      10,
+      169,
+      244,
+      79,
+      11,
+      169
+    ]
+  },
+  {
+    "name": "_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6assignEPKc",
+    "rva": 8786836,
+    "bytes": [
+      244,
+      79,
+      190,
+      169,
+      253,
+      123,
+      1,
+      169,
+      253,
+      67,
+      0,
+      145,
+      244,
+      3,
+      0,
+      170
+    ]
+  },
+  {
+    "name": "_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev",
+    "rva": 8730008,
+    "bytes": [
+      8,
+      0,
+      64,
+      57,
+      72,
+      0,
+      0,
+      55,
+      192,
+      3,
+      95,
+      214,
+      0,
+      8,
+      64,
+      249
+    ]
+  }
+]
