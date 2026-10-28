@@ -7,6 +7,8 @@ const id='00000000-0000-0000-0000-000000000001',base='/private/profiles',live='/
 const request={schema:1,startupPid:12,id,database:'/library/mod.arz',preparedProfile:{root:base+'/'+id+'/SaveData',runtimeBound:false}};
 const resolve=r=>c.tqResolveSaveProfile(r,12,base,live);
 assert.equal(resolve(request).profileRoot,base+'/'+id+'/SaveData/');
+assert.equal(c.tqResolveSaveProfile(request,12,['/system-alias/profiles',base],live).profileRoot,base+'/'+id+'/SaveData/');
+assert.throws(()=>c.tqResolveSaveProfile(request,12,['/system-alias/profiles'],live));
 assert.equal(resolve({schema:1,startupPid:12,id:null,database:null}),null);
 for(const r of [{...request,startupPid:11},{...request,id:'../escape'},{...request,database:null},
  {...request,preparedProfile:null},{...request,preparedProfile:{...request.preparedProfile,runtimeBound:true}},

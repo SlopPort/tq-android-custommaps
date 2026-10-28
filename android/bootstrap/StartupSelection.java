@@ -8,7 +8,10 @@ import java.io.*;
 public final class StartupSelection {
     private StartupSelection() {}
     public static void prepare(File files, File liveSaves, int pid) throws Exception {
-        File directory = new File(files, "tqmods");
+        // Context.getFilesDir may use Android's /data/data alias. Resolve only
+        // that trusted base; reject redirected children inside app storage.
+        File directory = new File(files.getCanonicalFile(), "tqmods");
+        if (!directory.equals(directory.getCanonicalFile())) throw new IOException("Mod storage is aliased");
         if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("Cannot prepare startup selection");
         AtomicFile source = new AtomicFile(new File(directory, "request.json"));
         JSONObject request;

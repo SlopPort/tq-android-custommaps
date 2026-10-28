@@ -104,7 +104,7 @@ function tqActivateGladiatorsMap(engine, archive, player, config, gate, onReport
    onLeave(value){this.row.result=value.toInt32();save();}
   }));
   report.status='ready-for-ModProbe';report.group0=count0();
- }catch(e){report.status='error-restart-required';report.error=String(e);try{save();}finally{new NativeFunction(Process.getModuleByName('libc.so').getExportByName('abort'),'void',[])();}}
+ }catch(e){report.status='error-restart-required';report.error=String(e);try{save();}finally{new NativeFunction(Process.getModuleByName('libc.so').getExportByName('abort'),'void',[],{exceptions:'propagate'})();}}
  save();return report;
 }
 

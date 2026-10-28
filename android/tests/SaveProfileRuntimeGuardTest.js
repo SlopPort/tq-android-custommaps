@@ -3,7 +3,7 @@ const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('ass
 function run(mode){
  let attached=0,aborted=0,checked=0,last;
  const ctx={Process:{id:1,getModuleByName:()=>({getExportByName:()=> 'abort'})},
-  NativeFunction:function(address){return address==='abort'?()=>{aborted++;throw Error('PROCESS_ABORT');}:()=>{};},
+  NativeFunction:function(address,_r,_a,options){if(address==='abort')assert.equal(options.exceptions,'propagate');return address==='abort'?()=>{aborted++;throw Error('PROCESS_ABORT');}:()=>{};},
   Memory:{allocUtf8String:()=>({})},Interceptor:{attach:()=>{attached++;if(mode==='attach')throw Error('attach failed');return {};}}};
  vm.createContext(ctx);
  for(const name of ['plan-save-path.js','save-profile-runtime.js'])

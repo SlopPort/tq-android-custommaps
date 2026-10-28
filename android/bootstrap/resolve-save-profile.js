@@ -9,13 +9,14 @@ function tqResolveSaveProfile(request, pid, profilesRoot, liveRoot) {
     throw Error('Invalid profile selection');
   if (typeof request.database !== 'string' || request.database.length === 0)
     throw Error('Selected mod database missing');
-  if (typeof profilesRoot !== 'string' || !profilesRoot.startsWith('/') ||
-      /[\\\x00-\x1f\x7f]/.test(profilesRoot) ||
-      profilesRoot.split('/').slice(1).some(p => !p || p === '.' || p === '..'))
+  const roots=Array.isArray(profilesRoot)?profilesRoot:[profilesRoot];
+  if(!roots.length || roots.some(root=>typeof root !== 'string' || !root.startsWith('/') ||
+      /[\\\x00-\x1f\x7f]/.test(root) ||
+      root.split('/').slice(1).some(p => !p || p === '.' || p === '..')))
     throw Error('Invalid profile storage root');
-  const expected = profilesRoot + '/' + request.id + '/SaveData';
   const profile = request.preparedProfile;
-  if (!profile || profile.root !== expected || profile.runtimeBound !== false)
+  const expected=profile && roots.map(root=>root+'/'+request.id+'/SaveData').find(root=>root===profile.root);
+  if (!profile || !expected || profile.runtimeBound !== false)
     throw Error('Prepare a separate save copy before starting this mod');
   tqPlanSavePath(liveRoot, expected, liveRoot); // Reject overlapping/invalid roots.
   return Object.freeze({id: request.id, liveRoot, profileRoot: expected + '/'});

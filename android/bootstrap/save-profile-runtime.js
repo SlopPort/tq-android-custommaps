@@ -14,7 +14,7 @@ function tqInstallSaveProfile(engine, gate, options) {
   };
   const report = {pid:Process.id,status:'preflight',redirects:0,caravan:[],loads:[],errors:[]};
   const held = [];
-  const abort = new NativeFunction(Process.getModuleByName('libc.so').getExportByName('abort'),'void',[]);
+  const abort = new NativeFunction(Process.getModuleByName('libc.so').getExportByName('abort'),'void',[],{exceptions:'propagate'});
   const emit = () => { if (options.onReport) options.onReport(report); };
   const fail = error => {
     report.status='refused';report.errors.push(String(error));

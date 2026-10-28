@@ -26,3 +26,13 @@ The on-device experiment used the existing tq-android-perf single-injection add-
 The result is written to the game's private cache as `tq-custommaps-proof.json`. `verified-stable-record-overrides` means the three sampled database fields matched the mod immediately and at the delayed check. It does not mean gameplay or save compatibility was tested.
 
 Disable the test add-on and restart the game to remove the runtime import. Staged CustomMaps files remain. No game binaries or mod archives are distributed here.
+
+### Integrated profile/map test (developers only)
+
+`embed-bootstrap-probe.py --enable-profile-lab` bundles the profile loader instead
+of the diagnostic/database-only script. Include the current bootstrap Java classes
+when building locally. This mode reads the startup snapshot, requires a prepared
+separate save copy for a selected mod, and limits character loading to **ModProbe**.
+It is not the general-user release: character-list isolation, stash transfers and
+the final recovery workflow still need acceptance testing. Selecting vanilla
+starts without profile hooks. Keep all APKs, Gadget inputs, mods and saves local.

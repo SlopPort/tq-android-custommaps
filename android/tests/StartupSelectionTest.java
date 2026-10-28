@@ -35,6 +35,12 @@ public class StartupSelectionTest {
   Files.delete(profile.toPath().getParent().resolve("profile.properties"));
   try {StartupSelection.prepare(files.toFile(),live.toFile(),126);throw new AssertionError("Unprepared profile accepted");}catch(IOException expected){}
   if(!Arrays.equals(snapshot,Files.readAllBytes(frozen)))throw new AssertionError("Invalid profile replaced snapshot");
+  Files.delete(request);
+  Path alias=temp.resolve("files-alias");
+  Files.createSymbolicLink(alias,files);
+  StartupSelection.prepare(alias.toFile(),live.toFile(),127);
+  JSONObject aliased=new JSONObject(new String(Files.readAllBytes(frozen),"UTF-8"));
+  if(aliased.getInt("startupPid")!=127)throw new AssertionError("Trusted app-directory alias failed");
   System.out.println("PASS: default vanilla, per-start snapshot, validated inactive profile, malformed selection and incomplete profile refusal");
  }
 }

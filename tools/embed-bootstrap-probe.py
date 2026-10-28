@@ -13,6 +13,8 @@ p.add_argument('decoded', type=pathlib.Path)
 p.add_argument('gadget', type=pathlib.Path)
 p.add_argument('--enable-supported-databases', action='store_true',
     help='Opt into the experimental selected-database loader; no save isolation or ARC/MAP mounting')
+p.add_argument('--enable-profile-lab', action='store_true',
+    help='Opt into integrated profile/map tests; ModProbe only, not a general-user release')
 a = p.parse_args()
 root = pathlib.Path(__file__).resolve().parents[1]
 ns = 'http://schemas.android.com/apk/res/android'
@@ -34,7 +36,7 @@ shutil.copyfile(a.gadget, lib / 'libtqmods.so')
 script = (root / 'android/bootstrap/probe.js').read_bytes()
 parameters = {'report': '/data/user/0/com.hg.titanquestultimate/files/bootstrap-status.json',
     'expectedApi': json.loads((root / 'android/bootstrap/api-5364.json').read_text())}
-if a.enable_supported_databases:
+if a.enable_supported_databases or a.enable_profile_lab:
     script = (root / 'android/bootstrap/resolve-selection.js').read_bytes() + b'\n' + \
         (root / 'android/bootstrap/lab-database-probe.js').read_bytes() + b'\n' + script
     parameters.update(observeMenu=True, verifyVanilla=True, requireStartupPid=True,
@@ -43,6 +45,18 @@ if a.enable_supported_databases:
                      '/data/data/com.hg.titanquestultimate/files/tqmods/library'],
         profiles=json.loads((root / 'android/bootstrap/profiles-5364.json').read_text())
             + json.loads((root / 'android/bootstrap/map-profiles-5364.json').read_text()))
+if a.enable_profile_lab:
+    names = ['resolve-selection.js', 'lab-database-probe.js', 'plan-save-path.js',
+        'resolve-save-profile.js', 'preflight-native-api.js', 'save-profile-runtime.js',
+        'observe-engine-startup.js', 'gladiators-map-runtime.js', 'profile-loader.js']
+    script = b'\n'.join((root / 'android/bootstrap' / name).read_bytes() for name in names)
+    parameters.update(
+        profilesRoot=['/data/user/0/com.hg.titanquestultimate/files/tqmods/save-profiles',
+                      '/data/data/com.hg.titanquestultimate/files/tqmods/save-profiles'],
+        liveSaveRoot='/storage/emulated/0/Android/data/com.hg.titanquestultimate/files/Preferences/SaveData/',
+        saveApi=json.loads((root / 'android/bootstrap/save-profile-api-5364.json').read_text()),
+        mapApi=json.loads((root / 'android/bootstrap/map-api-5364.json').read_text()),
+        gladiators=json.loads((root / 'android/bootstrap/gladiators-runtime-5364.json').read_text()))
 (lib / 'libtqmods.script.so').write_bytes(script)
 (lib / 'libtqmods.config.so').write_text(json.dumps({
     'interaction': {'type': 'script', 'path': 'libtqmods.script.so', 'parameters': parameters},
@@ -54,5 +68,5 @@ f = ET.SubElement(activity, 'intent-filter')
 ET.SubElement(f, 'action', {key('name'): 'android.intent.action.MAIN'})
 ET.SubElement(f, 'category', {key('name'): 'android.intent.category.LAUNCHER'})
 tree.write(path, encoding='utf-8', xml_declaration=True)
-print('Registered ' + ('experimental selected-database loader' if a.enable_supported_databases else 'startup-only diagnostic')
+print('Registered ' + ('ModProbe-only profile/map test' if a.enable_profile_lab else 'experimental selected-database loader' if a.enable_supported_databases else 'startup-only diagnostic')
     + '. Compile/include the activity DEX before building.')
