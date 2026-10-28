@@ -1,0 +1,350 @@
+{
+  "resources": [
+    {
+      "name": "Effects.arc",
+      "size": 2856,
+      "fnv1a": "b03d0d83"
+    },
+    {
+      "name": "InGameUI.arc",
+      "size": 35452,
+      "fnv1a": "576aaafc"
+    },
+    {
+      "name": "Maps.arc",
+      "size": 520497,
+      "fnv1a": "099b3e33"
+    },
+    {
+      "name": "Quests.arc",
+      "size": 17058,
+      "fnv1a": "f0ba7039"
+    },
+    {
+      "name": "SoundsAndMusic.arc",
+      "size": 4379215,
+      "fnv1a": "8ac41281"
+    },
+    {
+      "name": "Text.arc",
+      "size": 2450,
+      "fnv1a": "0dec6139"
+    },
+    {
+      "name": "Textures.arc",
+      "size": 941355,
+      "fnv1a": "950e36fb"
+    }
+  ],
+  "database": {
+    "name": "Gladiators - Gods of the Arena.arz",
+    "size": 274580,
+    "fnv1a": "084f8518"
+  },
+  "records": [
+    {
+      "name": "my records\\controllers\\controller_gladiators.dbr",
+      "size": 624,
+      "cells": [
+        {
+          "offset": 20,
+          "value": 1090519040
+        },
+        {
+          "offset": 32,
+          "value": 1065353216
+        },
+        {
+          "offset": 44,
+          "value": 1094713344
+        },
+        {
+          "offset": 92,
+          "value": 20
+        },
+        {
+          "offset": 104,
+          "value": 100
+        },
+        {
+          "offset": 128,
+          "value": 0
+        },
+        {
+          "offset": 176,
+          "value": 50
+        },
+        {
+          "offset": 188,
+          "value": 3000
+        },
+        {
+          "offset": 200,
+          "value": 1073741824
+        },
+        {
+          "offset": 212,
+          "value": 0
+        },
+        {
+          "offset": 236,
+          "value": 50
+        },
+        {
+          "offset": 248,
+          "value": 10000
+        },
+        {
+          "offset": 272,
+          "value": 5000
+        },
+        {
+          "offset": 284,
+          "value": 1073741824
+        },
+        {
+          "offset": 296,
+          "value": 1092616192
+        },
+        {
+          "offset": 308,
+          "value": 1075838976
+        },
+        {
+          "offset": 320,
+          "value": 5000
+        },
+        {
+          "offset": 332,
+          "value": 1119092736
+        },
+        {
+          "offset": 344,
+          "value": 4000
+        },
+        {
+          "offset": 356,
+          "value": 0
+        },
+        {
+          "offset": 368,
+          "value": 1073741824
+        },
+        {
+          "offset": 380,
+          "value": 1000
+        },
+        {
+          "offset": 392,
+          "value": 1084227584
+        },
+        {
+          "offset": 404,
+          "value": 1000
+        },
+        {
+          "offset": 416,
+          "value": 1073741824
+        },
+        {
+          "offset": 428,
+          "value": 1097859072
+        },
+        {
+          "offset": 440,
+          "value": 25000
+        },
+        {
+          "offset": 452,
+          "value": 0
+        },
+        {
+          "offset": 464,
+          "value": 0
+        },
+        {
+          "offset": 476,
+          "value": 15
+        },
+        {
+          "offset": 488,
+          "value": 1
+        },
+        {
+          "offset": 512,
+          "value": 1094713344
+        },
+        {
+          "offset": 524,
+          "value": 1090519040
+        },
+        {
+          "offset": 536,
+          "value": 1101004800
+        },
+        {
+          "offset": 548,
+          "value": 1101004800
+        },
+        {
+          "offset": 560,
+          "value": 0
+        },
+        {
+          "offset": 572,
+          "value": 0
+        },
+        {
+          "offset": 584,
+          "value": 1101004800
+        },
+        {
+          "offset": 596,
+          "value": 80
+        },
+        {
+          "offset": 608,
+          "value": 80
+        },
+        {
+          "offset": 620,
+          "value": 3
+        }
+      ]
+    },
+    {
+      "name": "my records\\sounds\\decorations\\peoplelooppak.dbr",
+      "size": 168,
+      "cells": [
+        {
+          "offset": 32,
+          "value": 1086324736
+        },
+        {
+          "offset": 44,
+          "value": 0
+        },
+        {
+          "offset": 56,
+          "value": 0
+        },
+        {
+          "offset": 68,
+          "value": 1650
+        },
+        {
+          "offset": 80,
+          "value": 0
+        },
+        {
+          "offset": 104,
+          "value": 0
+        },
+        {
+          "offset": 116,
+          "value": 1058642330
+        },
+        {
+          "offset": 128,
+          "value": 25
+        },
+        {
+          "offset": 140,
+          "value": 25
+        },
+        {
+          "offset": 152,
+          "value": 25
+        },
+        {
+          "offset": 164,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "name": "my records\\sounds\\musicpak\\gladiators_arena.dbr",
+      "size": 264,
+      "cells": [
+        {
+          "offset": 44,
+          "value": 90
+        },
+        {
+          "offset": 56,
+          "value": 60
+        },
+        {
+          "offset": 68,
+          "value": 1064514355
+        },
+        {
+          "offset": 80,
+          "value": 15
+        },
+        {
+          "offset": 92,
+          "value": 3
+        },
+        {
+          "offset": 104,
+          "value": 1064514355
+        },
+        {
+          "offset": 116,
+          "value": 1061158912
+        },
+        {
+          "offset": 128,
+          "value": 1061158912
+        },
+        {
+          "offset": 140,
+          "value": 1061158912
+        },
+        {
+          "offset": 152,
+          "value": 1061158912
+        },
+        {
+          "offset": 164,
+          "value": 1061158912
+        },
+        {
+          "offset": 176,
+          "value": 1061158912
+        },
+        {
+          "offset": 188,
+          "value": 1061158912
+        },
+        {
+          "offset": 200,
+          "value": 1058642330
+        },
+        {
+          "offset": 212,
+          "value": 1061158912
+        },
+        {
+          "offset": 224,
+          "value": 20
+        },
+        {
+          "offset": 236,
+          "value": 12
+        },
+        {
+          "offset": 248,
+          "value": 1058642330
+        },
+        {
+          "offset": 260,
+          "value": 0
+        }
+      ]
+    }
+  ],
+  "enumCallBytes": "99,197,236,151",
+  "map": "maps/gladiators.map"
+}

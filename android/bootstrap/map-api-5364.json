@@ -1,0 +1,278 @@
+[
+  {
+    "name": "_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6assignEPKcm",
+    "rva": "0x8546c4",
+    "size": 188,
+    "fnv1a": "32524c1a"
+  },
+  {
+    "name": "_ZNK4GAME7Archive11GetNumFilesEv",
+    "rva": "0x968fa8",
+    "size": 20,
+    "fnv1a": "5b497c05"
+  },
+  {
+    "name": "_ZNK4GAME7Archive8FindFileEPKc",
+    "rva": "0x967990",
+    "size": 260,
+    "fnv1a": "8705d1ef"
+  },
+  {
+    "name": "_ZN4GAME17FileSourceArchiveD2Ev",
+    "rva": "0x870934",
+    "size": 80,
+    "fnv1a": "0e01b789"
+  },
+  {
+    "name": "_ZNK4GAME13LoadingScreen11GetSaveGameERNS_4Game18SaveGameInfoStructEb",
+    "rva": "0xbe31a8",
+    "size": 680,
+    "fnv1a": "0399f674"
+  },
+  {
+    "name": "_ZN4GAME4Game8LoadGameERKNS0_18SaveGameInfoStructEb",
+    "rva": "0xc756d0",
+    "size": 3156,
+    "fnv1a": "30be2f54"
+  },
+  {
+    "name": "_ZN4GAME5World14IsValidMapFileEPKcb",
+    "rva": "0x89c19c",
+    "size": 124,
+    "fnv1a": "7726e296"
+  },
+  {
+    "name": "_ZN4GAME10FileSystemC2Ev",
+    "rva": "0x96a250",
+    "size": 36,
+    "fnv1a": "7e75a5e0"
+  },
+  {
+    "name": "_ZN4GAME7ArchiveC2Ev",
+    "rva": "0x966d7c",
+    "size": 176,
+    "fnv1a": "74c6c5a7"
+  },
+  {
+    "name": "_ZN4GAME15DatabaseArchiveC2Ev",
+    "rva": "0xd49278",
+    "size": 208,
+    "fnv1a": "dea5f050"
+  },
+  {
+    "name": "_ZN4GAME8GameInfo12SetLevelNameERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+    "rva": "0x910944",
+    "size": 8,
+    "fnv1a": "39dd1971"
+  },
+  {
+    "name": "_ZN4GAME10FileSystemD2Ev",
+    "rva": "0x96a274",
+    "size": 164,
+    "fnv1a": "4654ddf9"
+  },
+  {
+    "name": "_ZN4GAME10FileSystem8OpenFileEPKcNS_8FileModeE",
+    "rva": "0x96aae4",
+    "size": 224,
+    "fnv1a": "154843be"
+  },
+  {
+    "name": "_ZN4GAME11FileArchive4LockEjj",
+    "rva": "0x8e98bc",
+    "size": 200,
+    "fnv1a": "f1b15d46"
+  },
+  {
+    "name": "_ZN4GAME7ArchiveD2Ev",
+    "rva": "0x966e54",
+    "size": 124,
+    "fnv1a": "d7c88186"
+  },
+  {
+    "name": "_ZN4GAME15DatabaseArchiveD2Ev",
+    "rva": "0xd493a4",
+    "size": 360,
+    "fnv1a": "3cc41e95"
+  },
+  {
+    "name": "_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6assignEPKc",
+    "rva": "0x861394",
+    "size": 52,
+    "fnv1a": "1e2c9884"
+  },
+  {
+    "name": "_ZN4GAME7Archive4OpenEPKcNS0_8FileModeEb",
+    "rva": "0x966fdc",
+    "size": 512,
+    "fnv1a": "5ca7b035"
+  },
+  {
+    "name": "_ZN4GAME10FileSystem9CloseFileERPNS_4FileE",
+    "rva": "0x96acd4",
+    "size": 72,
+    "fnv1a": "0abc0905"
+  },
+  {
+    "name": "_ZN4GAME6Engine13GetFileSystemEv",
+    "rva": "0x98ddf4",
+    "size": 8,
+    "fnv1a": "3105418f"
+  },
+  {
+    "name": "_ZN4GAME5World4LoadEPKcbb",
+    "rva": "0x89bd7c",
+    "size": 1056,
+    "fnv1a": "31f47f13"
+  },
+  {
+    "name": "_ZN4GAME10FileSystem16AddSourceArchiveERKNS0_22AddSourceArchiveParamsE",
+    "rva": "0x96a668",
+    "size": 556,
+    "fnv1a": "9d76c49d"
+  },
+  {
+    "name": "_ZNK4GAME7Archive19ExtractFileToMemoryEiPhj",
+    "rva": "0x968360",
+    "size": 56,
+    "fnv1a": "cc1b8625"
+  },
+  {
+    "name": "_ZNK4GAME7Archive12GetFileEntryEi",
+    "rva": "0x968fbc",
+    "size": 16,
+    "fnv1a": "877b58c7"
+  },
+  {
+    "name": "_ZN4GAME11FileArchive6UnlockEv",
+    "rva": "0x8e9984",
+    "size": 48,
+    "fnv1a": "7923c6ab"
+  },
+  {
+    "name": "_ZNK4GAME11FileArchive12GetFileEntryEv",
+    "rva": "0x8e99c4",
+    "size": 8,
+    "fnv1a": "80d43be2"
+  },
+  {
+    "name": "_ZN4GAME11FileArchiveD2Ev",
+    "rva": "0x8e9828",
+    "size": 80,
+    "fnv1a": "c3524ccb"
+  },
+  {
+    "name": "_ZN4GAME11FileArchive4LockEv",
+    "rva": "0x8e98a4",
+    "size": 24,
+    "fnv1a": "d838f059"
+  },
+  {
+    "name": "_ZN4GAME6Engine21LoadCustomMapDatabaseERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+    "rva": "0x98bc38",
+    "size": 68,
+    "fnv1a": "abc07255"
+  },
+  {
+    "name": "_ZN4GAME8GameInfo13GetPlayerNameERNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+    "rva": "0x910b70",
+    "size": 56,
+    "fnv1a": "0fa33895"
+  },
+  {
+    "name": "_ZNK4GAME11FileArchive9GetLengthEv",
+    "rva": "0x8e99b8",
+    "size": 12,
+    "fnv1a": "5e3a4036"
+  },
+  {
+    "name": "_ZN4GAME8GameInfo12SetLevelNameERKNSt6__ndk112basic_stringIwNS1_11char_traitsIwEENS1_9allocatorIwEEEE",
+    "rva": "0x91094c",
+    "size": 44,
+    "fnv1a": "7eefbf72"
+  },
+  {
+    "name": "_ZN4GAME8GameInfo13GetPlayerNameEv",
+    "rva": "0x910ba8",
+    "size": 8,
+    "fnv1a": "69611d50"
+  },
+  {
+    "name": "_ZN4GAME15DatabaseArchive9GetRecordEPPvRji",
+    "rva": "0xd4aa58",
+    "size": 16,
+    "fnv1a": "be2dc8e7"
+  },
+  {
+    "name": "_ZN4GAME15DatabaseArchive11DeserializeEPKvjb",
+    "rva": "0xd49708",
+    "size": 192,
+    "fnv1a": "fe857711"
+  },
+  {
+    "name": "_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6assignEPKcm",
+    "rva": "0x8546c4",
+    "size": 188,
+    "fnv1a": "32524c1a"
+  },
+  {
+    "name": "_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6assignEPKc",
+    "rva": "0x861394",
+    "size": 52,
+    "fnv1a": "1e2c9884"
+  },
+  {
+    "name": "_ZN4GAME15DatabaseArchive24GetRecordIndexFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+    "rva": "0xd4a95c",
+    "size": 152,
+    "fnv1a": "5fcbc069"
+  },
+  {
+    "name": "_ZN4GAME6Engine18GetDatabaseArchiveEv",
+    "rva": "0x98ddfc",
+    "size": 8,
+    "fnv1a": "84dbb593"
+  },
+  {
+    "name": "_ZNK4GAME10GameEngine13GetMainPlayerEv",
+    "rva": "0x9fdfdc",
+    "size": 88,
+    "fnv1a": "40f1cc12"
+  },
+  {
+    "name": "_ZN4GAME19LocalizationManager14LoadModStringsEv",
+    "rva": "0x9340a4",
+    "size": 696,
+    "fnv1a": "0b974713"
+  },
+  {
+    "name": "_ZN4GAME19LocalizationManager15HasLocalizationEPKc",
+    "rva": "0x93636c",
+    "size": 144,
+    "fnv1a": "25329e9e"
+  },
+  {
+    "name": "_ZN4GAME19LocalizationManager11AddTagToMapERNSt6__ndk112basic_stringIwNS1_11char_traitsIwEENS1_9allocatorIwEEEEPKcb",
+    "rva": "0x936810",
+    "size": 16,
+    "fnv1a": "194c7fc2"
+  },
+  {
+    "name": "_ZN4GAME19LocalizationManager7GetTextEPKc",
+    "rva": "0x9347d0",
+    "size": 16,
+    "fnv1a": "60f1516d"
+  },
+  {
+    "name": "_ZNSt6__ndk112basic_stringIwNS_11char_traitsIwEENS_9allocatorIwEEE6assignEPKw",
+    "rva": "0x85a138",
+    "size": 16,
+    "fnv1a": "93423397"
+  },
+  {
+    "name": "_ZNSt6__ndk112basic_stringIwNS_11char_traitsIwEENS_9allocatorIwEEED2Ev",
+    "rva": "0x854a94",
+    "size": 16,
+    "fnv1a": "1b948374"
+  }
+]
