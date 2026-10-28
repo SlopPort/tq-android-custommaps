@@ -28,10 +28,33 @@ public class SaveProfileTest {
   if(!Arrays.equals(bytes,Files.readAllBytes(original)))throw new AssertionError("Source changed");
   Files.write(original,new byte[]{8});
   if(!Arrays.equals(new byte[]{9},Files.readAllBytes(copied)))throw new AssertionError("Profile aliases source");
+  // A played profile must remain usable even after new map files are created.
+  Files.write(copy.toPath().resolve("new-map-progress.dat"), new byte[]{4,5});
+  if(!copy.equals(SaveProfileStore.resolvePrepared(source.toFile(),profiles,id,false)))
+    throw new AssertionError("Prepared profile not resolved");
+  try {SaveProfileStore.resolvePrepared(source.toFile(),profiles,id,true);throw new AssertionError("Running profile accepted");}catch(IOException expected){}
+  Path marker=copy.toPath().getParent().resolve("profile.properties");
+  byte[] metadata=Files.readAllBytes(marker);
+  Files.write(marker,"schema=1\nid=wrong\n".getBytes("UTF-8"));
+  try {SaveProfileStore.resolvePrepared(source.toFile(),profiles,id,false);throw new AssertionError("Wrong profile marker accepted");}catch(IOException expected){}
+  Files.delete(marker);
+  try {SaveProfileStore.resolvePrepared(source.toFile(),profiles,id,false);throw new AssertionError("Missing profile marker accepted");}catch(IOException expected){}
+  Files.write(marker,metadata);
+  try {SaveProfileStore.resolvePrepared(copy,profiles,id,false);throw new AssertionError("Overlapping saves accepted");}catch(IOException expected){}
+  if(!copy.equals(SaveProfileStore.resolvePrepared(source.toFile(),profiles,id,false)))throw new AssertionError("Profile validation changed files");
+  Path link=copy.toPath().resolve("linked-live");
+  boolean linked=false;
+  try { Files.createSymbolicLink(link,source); linked=true; }
+  catch(UnsupportedOperationException | IOException unavailable) { System.out.println("SKIP: symbolic-link creation unavailable on this host"); }
+  if(linked){
+   try {SaveProfileStore.resolvePrepared(source.toFile(),profiles,id,false);throw new AssertionError("Linked live saves accepted");}catch(IOException expected){}
+   Files.delete(link);
+   System.out.println("PASS: profile symbolic-link escape refused");
+  }
   try {SaveProfileStore.create(source.toFile(),profiles,id,false);throw new AssertionError("Overwrite accepted");}catch(IOException expected){}
   if(!Arrays.equals(new byte[]{9},Files.readAllBytes(copied)))throw new AssertionError("Existing profile altered");
   try {SaveProfileStore.create(source.toFile(),profiles,"../escape",false);throw new AssertionError("Traversal accepted");}catch(IOException expected){}
   try {SaveProfileStore.create(source.toFile(),source.resolve("profiles").toFile(),"00000000-0000-0000-0000-000000000002",false);throw new AssertionError("Nested root accepted");}catch(IOException expected){}
-  System.out.println("PASS: independent save copy, bidirectional write separation, duplicate/traversal/running/nested-root refusal");
+  System.out.println("PASS: independent save copy, write separation, played-profile reuse, marker mismatch/missing, overlap and running refusal");
  }
 }

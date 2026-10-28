@@ -37,8 +37,8 @@ parameters = {'report': '/data/user/0/com.hg.titanquestultimate/files/bootstrap-
 if a.enable_supported_databases:
     script = (root / 'android/bootstrap/resolve-selection.js').read_bytes() + b'\n' + \
         (root / 'android/bootstrap/lab-database-probe.js').read_bytes() + b'\n' + script
-    parameters.update(observeMenu=True, verifyVanilla=True,
-        selectionRequest='/data/user/0/com.hg.titanquestultimate/files/tqmods/request.json',
+    parameters.update(observeMenu=True, verifyVanilla=True, requireStartupPid=True,
+        selectionRequest='/data/user/0/com.hg.titanquestultimate/files/tqmods/startup-request.json',
         libraryRoot=['/data/user/0/com.hg.titanquestultimate/files/tqmods/library',
                      '/data/data/com.hg.titanquestultimate/files/tqmods/library'],
         profiles=json.loads((root / 'android/bootstrap/profiles-5364.json').read_text())

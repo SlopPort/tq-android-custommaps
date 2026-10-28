@@ -64,7 +64,10 @@ rpc.exports.init = function (stage, parameters) {
               let databaseConfig = parameters.labDatabase;
               if (parameters.selectionRequest && typeof tqResolveSelection === 'function') {
                 try {
-                  const selection = tqResolveSelection(File.readAllText(parameters.selectionRequest),
+                  const selectionText = File.readAllText(parameters.selectionRequest);
+                  if (parameters.requireStartupPid === true && JSON.parse(selectionText).startupPid !== Process.id)
+                    throw Error('Selection belongs to a different startup');
+                  const selection = tqResolveSelection(selectionText,
                     parameters.profiles || [], parameters.libraryRoot, path => File.readAllBytes(path));
                   menu.selection = {status:selection.status,id:selection.id,name:selection.name};
                   if (selection.status === 'map-preflight-verified')
