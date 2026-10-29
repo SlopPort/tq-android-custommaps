@@ -87,7 +87,8 @@ ready-to-install game APK. A build without the module refuses a Perf-enabled sta
 2. Turn on **Perf - engine optimizations and graphics menu**.
 3. For the normal campaign, choose **Select vanilla (no mod)**. This keeps the
    Perf choice enabled while selecting the ordinary game database and saves.
-4. Press **Open game**. The **Perf** button at the top opens the in-game graphics
+4. Press **Open game**. With a supported custom map, Perf starts after the map
+   adapter finishes activation at character selection. The **Perf** button at the top opens the in-game graphics
    and optimization menu. The locally included Traders add-on uses that overlay.
 5. To change the launch choice, save your character, return to the manager, use
    **Close app for a fresh start**, then reopen the shortcut and choose again.

@@ -14,6 +14,14 @@ rpc.exports.init = function(stage, parameters) {
     report.menuProbe={selection:{status:selection.status,id:selection.id,name:selection.name}};
     const profile=tqResolveSaveProfile(request,Process.id,parameters.profilesRoot,parameters.liveSaveRoot);
     const isMap=selection.status==='map-preflight-verified';
+    let perfStarted=false;
+    const startPerf=()=>{
+      if(request.perfEnabled!==true||perfStarted)return;
+      perfStarted=true;
+      report.perf={requested:true,status:'starting'};write();
+      Promise.resolve(globalThis.tqStartPerf(stage)).then(()=>{report.perf.status='initialization-finished';write();}).catch(e=>{report.perf.status='error';report.perf.error=String(e);write();});
+    };
+    if(request.perfEnabled===true&&typeof globalThis.tqStartPerf!=='function')throw Error('Perf module is not bundled in this build');
     let mapConfig;
     if(isMap){
       if(selection.plan.map!=='maps/gladiators.map')throw Error('Map adapter unavailable');
@@ -61,14 +69,15 @@ rpc.exports.init = function(stage, parameters) {
             if(sample)report.menuProbe.database=tqLabDatabaseProbe(engine,archive,{...sample,activate:false});
           }
           report.status='ready';write();
+          // Install map call-site hooks before optional Perf can rewrite PLT calls.
+          if(isMap)startPerf();
         }catch(e){refuse(e);}
       }}));
       report.status='waiting-for-menu';write();
     },refuse));
     if(request.perfEnabled===true){
-      if(typeof globalThis.tqStartPerf!=='function')throw Error('Perf module is not bundled in this build');
-      report.perf={requested:true,status:'starting'};write();
-      Promise.resolve(globalThis.tqStartPerf(stage)).then(()=>{report.perf.status='initialization-finished';write();}).catch(e=>{report.perf.status='error';report.perf.error=String(e);write();});
+      if(isMap)report.perf={requested:true,status:'waiting-for-map'};
+      else startPerf();
     } else report.perf={requested:false,status:'off'};
     report.status='waiting-for-engine';write();
   }catch(e){refuse(e);}

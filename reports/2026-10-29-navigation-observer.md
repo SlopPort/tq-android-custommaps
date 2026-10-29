@@ -2,7 +2,8 @@
 
 The movement investigation now has a separate diagnostic module,
 `android/bootstrap/navigation-observer.js`. It is not installed by the normal
-manager and does not repair maps. Device execution remains untested.
+manager and does not repair maps. It was initially host-tested only; the device
+follow-up below records its first native execution.
 
 At Level::_PostLoad entry it captures the invocation's level pointer, thread and
 stage index. On return it reads the mesh through GetPathMeshRecast and, when
@@ -37,3 +38,33 @@ hook installation; nested invocations remain separate; absent/cold/ready results
 read failure, bounded samples, snapshot isolation and architecture refusal are
 covered. These mocks do not validate native ABI, thread safety, hook overhead or
 actual map navigation. Those require the device test above.
+
+## Device follow-up
+
+The observer ran in fresh processes on the rooted build-5364 phone. With LootPlus
+selected and its separate ModProbe save profile active, the stock world near Helos
+rendered normally. The sample contained 65 completed callbacks, including nine
+distinct level-pointer values with initialized meshes. A snapshot at character
+selection preceded world entry. In a separate Gladiators process with Perf off,
+the custom world rendered and all 25 completed observations reported present but
+uninitialized meshes. Both runs had zero probe errors and zero dropped samples.
+Counts include menu loading, and pointer values can be reused after destruction;
+they must not be interpreted as a census of regions. The Perf settings differed
+between these two runs, so this is not a fully controlled causal experiment.
+It strengthens the missing-navigation hypothesis without proving a repair.
+
+A subsequent Gladiators run with the startup-order fix and Perf on activated the
+map and entered its world. No navigation generation was attempted. Separate
+startup logs verified all seven requested engine patches active; the PLT pass
+skipped one mismatching instruction after the map hook had been installed.
+
+The Perf-enabled control also showed abnormally small pause-menu buttons.
+The Perf-off Gladiators run showed normal pause buttons. These are different
+worlds, so the responsible component has not been isolated. This remains a UI
+regression investigation, separate from the map's missing initialized meshes.
+
+After the first pair of runs, all 1,081 original SaveData files still matched
+the retained SHA-256 baseline, with no added or missing files. Test gameplay used
+only isolated ModProbe profiles. Private evidence includes
+navigation-control-world-live.json, navigation-gladiators-world-live.json,
+navigation-perf-order-world.json and navigation-original-save-comparison.json.
