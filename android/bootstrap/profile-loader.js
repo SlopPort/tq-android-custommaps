@@ -65,6 +65,11 @@ rpc.exports.init = function(stage, parameters) {
       }}));
       report.status='waiting-for-menu';write();
     },refuse));
+    if(request.perfEnabled===true){
+      if(typeof globalThis.tqStartPerf!=='function')throw Error('Perf module is not bundled in this build');
+      report.perf={requested:true,status:'starting'};write();
+      Promise.resolve(globalThis.tqStartPerf(stage)).then(()=>{report.perf.status='initialization-finished';write();}).catch(e=>{report.perf.status='error';report.perf.error=String(e);write();});
+    } else report.perf={requested:false,status:'off'};
     report.status='waiting-for-engine';write();
   }catch(e){refuse(e);}
 };

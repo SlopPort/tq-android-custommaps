@@ -15,7 +15,11 @@ p.add_argument('--enable-supported-databases', action='store_true',
     help='Opt into the experimental selected-database loader; no save isolation or ARC/MAP mounting')
 p.add_argument('--enable-profile-lab', action='store_true',
     help='Opt into integrated profile/map tests; ModProbe only, not a general-user release')
+p.add_argument('--perf-script', type=pathlib.Path,
+    help='Trusted local Perf script (with optional add-ons); requires --enable-profile-lab. No download.')
 a = p.parse_args()
+if a.perf_script and not a.enable_profile_lab:
+    p.error('--perf-script requires --enable-profile-lab')
 root = pathlib.Path(__file__).resolve().parents[1]
 ns = 'http://schemas.android.com/apk/res/android'
 ET.register_namespace('android', ns)
@@ -58,6 +62,10 @@ if a.enable_profile_lab:
         saveApi=json.loads((root / 'android/bootstrap/save-profile-api-5364.json').read_text()),
         mapApi=json.loads((root / 'android/bootstrap/map-api-5364.json').read_text()),
         gladiators=json.loads((root / 'android/bootstrap/gladiators-runtime-5364.json').read_text()))
+if a.perf_script:
+    perf = a.perf_script.read_text(encoding='utf-8')
+    wrapper = '(function(){\n' + perf + "\nconst perfInit=rpc.exports.init; globalThis.tqStartPerf=function(stage){return perfInit(stage,{mode:'apply',plt:true,snd:true,strm:true,slot:true,uneg:true,abbox:true,getend:true,menu:true});};\n})();\n"
+    script = wrapper.encode('utf-8') + script
 (lib / 'libtqmods.script.so').write_bytes(script)
 (lib / 'libtqmods.config.so').write_text(json.dumps({
     'interaction': {'type': 'script', 'path': 'libtqmods.script.so', 'parameters': parameters},

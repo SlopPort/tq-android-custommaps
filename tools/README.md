@@ -52,3 +52,13 @@ read-only planning, not a merger, engine compatibility test or manager activatio
 The underlying research parser is intended for trusted local files, not arbitrary
 untrusted uploads. Run `python tools/test-mod-combination.py` for synthetic
 conflict, path-normalization, string-index and map/duplicate policy tests.
+
+## Optional Perf launch module
+
+For local profile-loader builds, `embed-bootstrap-probe.py --enable-profile-lab
+--perf-script /path/to/trusted-perf.js ...` wraps a supplied Perf runtime script
+and captures its initialization callback. The manager's persistent Perf switch is
+copied into the startup snapshot and controls the next process. Perf is off by
+default; the build must actually include the module to enable it. Add-ons already
+included in that trusted script are retained. Do not supply untrusted JavaScript.
+This option does not download modules or distribute a game APK.

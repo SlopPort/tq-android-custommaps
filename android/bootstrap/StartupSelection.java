@@ -39,6 +39,7 @@ public final class StartupSelection {
             }
         }
         request.put("startupPid", pid);
+        request.put("perfEnabled", RuntimeFeatures.perf(files));
         AtomicFile target = new AtomicFile(new File(directory, "startup-request.json"));
         FileOutputStream out = null;
         try {

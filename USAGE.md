@@ -73,3 +73,28 @@ The test restored the same freshly exported saves without intervening gameplay: 
 ## Reporting a problem
 
 Include your game version, Android version, mod name/version, author-page link, exact message and the step that failed. Do not upload game APKs, saves, signing keys or third-party mod archives to issues. See [test results](reports/2026-10-27-importer-tests.md) and [publication boundaries](PUBLICATION.md).
+
+## Perf in a locally prepared build
+
+This option requires a build that includes the trusted Perf module. It is separate
+from selecting a database or map mod. The public repository does not include a
+ready-to-install game APK. A build without the module refuses a Perf-enabled start.
+
+1. Open **Titan Quest Mods** on the Home screen. You can also request an optional
+   **TQ Mods + Perf** shortcut with **Add manager to Home screen** and confirm
+   Android's prompt. If it does not appear, drag **Titan Quest Mods** from the app
+   drawer to the Home screen.
+2. Turn on **Perf - engine optimizations and graphics menu**.
+3. For the normal campaign, choose **Select vanilla (no mod)**. This keeps the
+   Perf choice enabled while selecting the ordinary game database and saves.
+4. Press **Open game**. The **Perf** button at the top opens the in-game graphics
+   and optimization menu. The locally included Traders add-on uses that overlay.
+5. To change the launch choice, save your character, return to the manager, use
+   **Close app for a fresh start**, then reopen the shortcut and choose again.
+   Turning off the launch switch affects the next process, not the running game.
+
+Use this manager shortcut when you want the configured Perf launch. Starting the
+original game activity directly does not run the manager's bootstrap. Old root
+injection must remain paused to avoid installing the same hooks twice. Each
+native optimization still checks its own compatibility; an enabled launch switch
+does not prove that every individual patch installed successfully.

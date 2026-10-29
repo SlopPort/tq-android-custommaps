@@ -51,7 +51,30 @@ public final class ModManagerActivity extends Activity {
         runtime = new TextView(this);
         add = new Button(this); add.setText("Add mod (ZIP / ARZ)");
         list = new LinearLayout(this); list.setOrientation(1);
-        layout.addView(status); layout.addView(runtime); layout.addView(add); layout.addView(list);
+        layout.addView(status); layout.addView(runtime);
+        Switch perf = new Switch(this); perf.setText("Perf - engine optimizations and graphics menu");
+        try { perf.setChecked(RuntimeFeatures.perf(getFilesDir())); }
+        catch (Exception error) { status.setText("Cannot read Perf settings: " + error.getMessage()); perf.setEnabled(false); }
+        perf.setOnCheckedChangeListener((button, checked) -> {
+            try { RuntimeFeatures.setPerf(getFilesDir(), checked); status.setText("Perf " + (checked ? "enabled" : "disabled") + " for the next fresh start. Save and close the app before restarting."); }
+            catch (Exception error) { status.setText("Could not save Perf settings: " + error.getMessage()); }
+        });
+        layout.addView(perf);
+        Button pin = new Button(this); pin.setText("Add manager to Home screen");
+        pin.setOnClickListener(v -> {
+            android.content.pm.ShortcutManager shortcuts = getSystemService(android.content.pm.ShortcutManager.class);
+            if (shortcuts == null || !shortcuts.isRequestPinShortcutSupported()) { status.setText("Add Titan Quest Mods from your app drawer to the Home screen."); return; }
+            Intent target = new Intent(Intent.ACTION_MAIN); target.setClassName(getPackageName(), "org.tqmods.Launcher");
+            android.graphics.Bitmap icon = android.graphics.Bitmap.createBitmap(96, 96, android.graphics.Bitmap.Config.ARGB_8888);
+            android.graphics.drawable.Drawable art = getApplicationInfo().loadIcon(getPackageManager());
+            art.setBounds(0, 0, 96, 96); art.draw(new android.graphics.Canvas(icon));
+            android.content.pm.ShortcutInfo shortcut = new android.content.pm.ShortcutInfo.Builder(this, "tq-mod-manager")
+                .setShortLabel("TQ Mods + Perf").setLongLabel("Titan Quest Mods and Perf")
+                .setIcon(android.graphics.drawable.Icon.createWithBitmap(icon))
+                .setIntent(target).build();
+            shortcuts.requestPinShortcut(shortcut, null);
+        });
+        layout.addView(pin); layout.addView(add); layout.addView(list);
         Button vanilla = new Button(this); vanilla.setText("Select vanilla (no mod)");
         layout.addView(vanilla);
         vanilla.setOnClickListener(v -> select(null));
