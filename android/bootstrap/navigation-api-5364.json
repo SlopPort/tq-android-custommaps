@@ -1,0 +1,20 @@
+[
+  {
+    "name": "_ZN4GAME5Level9_PostLoadERi",
+    "rva": 9365164,
+    "size": 288,
+    "fnv1a": "0cfbfcc0"
+  },
+  {
+    "name": "_ZNK4GAME14PathMeshRecast13IsInitializedEv",
+    "rva": 9227676,
+    "size": 16,
+    "fnv1a": "14d12fe9"
+  },
+  {
+    "name": "_ZN4GAME5Level17GetPathMeshRecastEv",
+    "rva": 9366776,
+    "size": 12,
+    "fnv1a": "19c0652c"
+  }
+]
