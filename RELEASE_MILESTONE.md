@@ -6,8 +6,8 @@ routine ADB use. Google Play installation remains explicitly unverified.
 
 | Acceptance area | Current evidence | Remaining gate |
 | --- | --- | --- |
-| Import and selection | Latest test UI installed; existing-library selection and startup passed | Repeat fresh ZIP import and profile preparation through UI |
-| Database mod | LootPlus runtime checks and a short user-reported gameplay check | Repeat through final packaged workflow |
+| Import and selection | Fresh Gladiators ZIP import, selection, profile preparation and world/save passed through UI | Restart and verify the freshly prepared profile |
+| Database mod | Installed profile-loader LootPlus activation/world/save passed | Repeat full restart and final workflow checks |
 | Map with resources and text | Manager-selected Gladiators entry/save/restart passed on one APK | Remove test-character restriction after profile lifecycle validation |
 | Separate saves | Stock- and custom-world profile save/reload; seven caravan-file reads after restart passed | Deliberate item persistence, cloud policy and startup guards |
 | Vanilla recovery | Manager-selected vanilla passed stock sentinel checks without script replacement | Final UI/error handling and vanilla gameplay check |
@@ -15,7 +15,7 @@ routine ADB use. Google Play installation remains explicitly unverified.
 | Publication | English docs and original code, text audit before publication | Final simple guide and reproducible supported setup |
 
 Latest profile evidence: [world roundtrip](reports/2026-10-28-profile-world-roundtrip.md).
-Priority: validate profile-only character lifecycle and deliberate item persistence,
+Priority: verify deliberate item persistence and the freshly prepared profile restart,
 then finish fresh-import and combined-mod acceptance. Do not label isolated lab successes
 as completed end-to-end functionality.
 
@@ -27,3 +27,5 @@ Caravan follow-up: [native wrapper and restart checks](reports/2026-10-28-carava
 Combined map/profile evidence: [custom-world save and restart](reports/2026-10-28-map-profile-roundtrip.md).
 
 Installed workflow: [manager-selected map, restart and vanilla](reports/2026-10-28-integrated-profile-loader.md).
+
+Fresh import evidence: [UI import and profile preparation](reports/2026-10-29-fresh-map-import.md).

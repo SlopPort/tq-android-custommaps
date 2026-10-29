@@ -141,11 +141,14 @@ public final class ModManagerActivity extends Activity {
             if (state.getInt("pid") == android.os.Process.myPid()) {
                 JSONObject menu = state.optJSONObject("menuProbe");
                 JSONObject database = menu == null ? null : menu.optJSONObject("database");
+                JSONObject map = menu == null ? null : menu.optJSONObject("map");
                 JSONObject choice = menu == null ? null : menu.optJSONObject("selection");
                 String detail = database != null ? database.optString("status")
                     : choice != null ? choice.optString("status") : "waiting for character selection";
                 String message;
-                if (detail.equals("overrides-verified")) message = "Database changes verified in this process. Gameplay compatibility is not guaranteed.";
+                if (state.optString("status").equals("refused")) message = "Startup was refused. Close the app and check the selected mod before retrying.";
+                else if (state.optBoolean("modsActivated") && map != null && map.optString("status").equals("ready-for-ModProbe")) message = "Experimental map activated for ModProbe only. Use a disposable test character.";
+                else if (detail.equals("overrides-verified")) message = "Database changes verified in this process. Gameplay compatibility is not guaranteed.";
                 else if (detail.equals("baseline-verified")) message = "The monitored database values match the unmodified game.";
                 else if (detail.equals("vanilla")) message = "No mod requested for this process.";
                 else if (detail.equals("map-preflight-verified")) message = "Map files match the tested package. This loader has not activated the map.";
@@ -323,7 +326,7 @@ public final class ModManagerActivity extends Activity {
                 try (InputStream stream = pending.open()) {
                     store.importFile(stream, pending.name, variant);
                 }
-                message = "Imported. Import does not establish compatibility; ARC/MAP loading is unsupported.";
+                message = "Imported. Select this mod and use a compatible loader; importing alone does not activate it.";
             } catch (ModStore.VariantRequired choice) {
                 runOnUiThread(() -> {
                     if (isDestroyed()) return;
