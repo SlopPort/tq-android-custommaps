@@ -34,3 +34,11 @@ fresh-map-character.png, fresh-map-world.png, fresh-map-save.png,
 fresh-map-reloaded.json, fresh-map-reloaded.png, fresh-map-save-comparison.json,
 fresh-map-profile-comparison.json.
 Google Play installation remains unverified.
+
+## Movement limitation reported afterwards
+
+The user reports that the character cannot move in Gladiators. Earlier automated
+movement attempts had no visible effect; this must not be attributed solely to
+ADB. World entry, rendering and save/reload remain observed, but playable map
+support is unproven. The cause is not yet identified. A copied stock-world
+character's position/save data is one hypothesis, not an established diagnosis.

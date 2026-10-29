@@ -8,7 +8,7 @@ routine ADB use. Google Play installation remains explicitly unverified.
 | --- | --- | --- |
 | Import and selection | Fresh Gladiators import, profile preparation, world/save/restart passed; original saves unchanged | Repeat final supported setup with polished UI |
 | Database mod | Installed profile-loader LootPlus activation/world/save passed | Repeat full restart and final workflow checks |
-| Map with resources and text | Manager-selected Gladiators entry/save/restart passed on one APK | Remove test-character restriction after profile lifecycle validation |
+| Map with resources and text | Gladiators entry/save/restart passed; user reports character cannot move | Diagnose movement before claiming playable map support |
 | Separate saves | Stock- and custom-world profile save/reload; seven caravan-file reads after restart passed | Deliberate item persistence, cloud policy and startup guards |
 | Vanilla recovery | Manager-selected vanilla passed stock sentinel checks without script replacement | Final UI/error handling and vanilla gameplay check |
 | Mod combination | Record/resource comparisons and conflict analysis exist | One combined gameplay-tested package; clear refusal of conflicts |
