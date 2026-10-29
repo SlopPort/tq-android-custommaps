@@ -76,6 +76,13 @@ Include your game version, Android version, mod name/version, author-page link, 
 
 ## Perf in a locally prepared build
 
+**Known issue:** tiny or missing labels have been observed with Perf enabled in the
+in-game pause menu, including the Save game controls. Selecting vanilla does not
+disable Perf. If this occurs, save when possible, close the game completely and
+turn off the manager's Perf launch switch before starting a fresh process.
+This is a temporary workaround; the overlay regression remains unresolved.
+See the [investigation](reports/2026-10-29-pause-menu-investigation.md).
+
 This option requires a build that includes the trusted Perf module. It is separate
 from selecting a database or map mod. The public repository does not include a
 ready-to-install game APK. A build without the module refuses a Perf-enabled start.
