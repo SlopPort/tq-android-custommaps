@@ -6,7 +6,7 @@ routine ADB use. Google Play installation remains explicitly unverified.
 
 | Acceptance area | Current evidence | Remaining gate |
 | --- | --- | --- |
-| Import and selection | Fresh Gladiators ZIP import, selection, profile preparation and world/save passed through UI | Restart and verify the freshly prepared profile |
+| Import and selection | Fresh Gladiators import, profile preparation, world/save/restart passed; original saves unchanged | Repeat final supported setup with polished UI |
 | Database mod | Installed profile-loader LootPlus activation/world/save passed | Repeat full restart and final workflow checks |
 | Map with resources and text | Manager-selected Gladiators entry/save/restart passed on one APK | Remove test-character restriction after profile lifecycle validation |
 | Separate saves | Stock- and custom-world profile save/reload; seven caravan-file reads after restart passed | Deliberate item persistence, cloud policy and startup guards |
@@ -15,8 +15,8 @@ routine ADB use. Google Play installation remains explicitly unverified.
 | Publication | English docs and original code, text audit before publication | Final simple guide and reproducible supported setup |
 
 Latest profile evidence: [world roundtrip](reports/2026-10-28-profile-world-roundtrip.md).
-Priority: verify deliberate item persistence and the freshly prepared profile restart,
-then finish fresh-import and combined-mod acceptance. Do not label isolated lab successes
+Priority: verify deliberate item persistence, then complete final setup/UI and
+combined-mod acceptance. Do not label isolated lab successes
 as completed end-to-end functionality.
 
 

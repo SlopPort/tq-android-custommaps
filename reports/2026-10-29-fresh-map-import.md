@@ -17,7 +17,12 @@ input and collected evidence. Only ModProbe entered gameplay; the prepared copy
 also contains the other original characters, which were not loaded.
 
 All 1,081 original save files matched the baseline before this fresh-map run.
-A post-run comparison and restart of this new profile remain pending.
+A follow-up restarted the same profile in process 20656. Its runtime report
+confirmed the saved custom-map identity and World::Load returned 1. The custom
+interior appeared again. A post-run SHA-256 comparison found all 1,081 original
+save files unchanged. Within the separate profile, 25 added or changed files
+were all under ModProbe; no other copied character or shared file differed
+from the prepared snapshot. Item-transfer persistence has not been tested.
 
 Source-only manager messages now distinguish import from activation and show the
 experimental map status when the current-process report confirms it. A standalone
@@ -25,5 +30,7 @@ APK build with bootstrap classes compiled successfully. Those message changes
 are not yet installed in the game APK.
 
 Private evidence: fresh-map-startup.json, fresh-map-world.json,
-fresh-map-character.png, fresh-map-world.png, fresh-map-save.png.
+fresh-map-character.png, fresh-map-world.png, fresh-map-save.png,
+fresh-map-reloaded.json, fresh-map-reloaded.png, fresh-map-save-comparison.json,
+fresh-map-profile-comparison.json.
 Google Play installation remains unverified.
