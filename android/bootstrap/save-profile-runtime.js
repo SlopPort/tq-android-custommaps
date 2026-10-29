@@ -60,6 +60,7 @@ function tqInstallSaveProfile(engine, gate, options) {
     }));
     held.push(Interceptor.attach(api.load,{
       onEnter(args){try{
+        if(options.beforeLoad) options.beforeLoad();
         const name=wide(args[1].add(0x18));
         if(options.allowedCharacter && name!==options.allowedCharacter)throw Error('Character outside test scope');
         if(report.loads.length<100)report.loads.push({event:'enter',name});emit();
@@ -67,7 +68,10 @@ function tqInstallSaveProfile(engine, gate, options) {
       onLeave(){if(report.loads.length<100)report.loads.push({event:'return'});try{emit();}catch(e){fail(e);}}
     }));
     for(const key of ['cloud','cloudAll'])held.push(Interceptor.attach(api[key],{
-      onEnter(){fail('Cloud save is not supported with an active separate profile');}
+      onEnter(){try {
+        if (!options.cloudPolicy) throw Error('Cloud save is not supported with an active separate profile');
+        options.cloudPolicy.assertDisabled();
+      } catch(e) { fail(e); }}
     }));
     report.status='ready';emit();
   } catch(e) { fail(e); }

@@ -26,23 +26,28 @@ rpc.exports.init = function(stage, parameters) {
     }
     held.push(...tqObserveEngineStartup(engine=>{
       const groups=[parameters.expectedApi];
-      if(profile)groups.push(parameters.saveApi);
+      if(profile)groups.push(parameters.saveApi,parameters.cloudApi);
       if(isMap)groups.push(parameters.mapApi);
       const gate=tqPreflightNativeApi(engine,groups.map(g=>g.map(a=>({...a,rva:Number(a.rva)}))));
       report.apiPreflight={status:'matched',count:gate.count};
-      if(profile)held.push(tqInstallSaveProfile(engine,gate,{...profile,allowedCharacter:'ModProbe',onReport:r=>{report.saveProfile=r;write();}}));
+      let cloudPolicy;
+      if(profile){cloudPolicy=tqInstallLocalOnlyCloud(engine,gate,refuse);held.push(cloudPolicy);report.cloud=cloudPolicy.report;}
+      if(profile)held.push(tqInstallSaveProfile(engine,gate,{...profile,cloudPolicy,beforeLoad(){if(report.status!=='ready'||!report.modsActivated)throw Error('Mod activation is not ready; restart and wait at character selection');},allowedCharacter:'ModProbe',onReport:r=>{report.saveProfile=r;write();}}));
       const E=n=>engine.getExportByName(n);
       const fn=(n,r,a)=>new NativeFunction(gate.address(engine,n),r,a);
       const getArchive=fn('_ZN4GAME6Engine18GetDatabaseArchiveEv','pointer',['pointer']);
       const getPlayer=fn('_ZNK4GAME10GameEngine13GetMainPlayerEv','pointer',['pointer']);
       let calls=0,done=false;
       held.push(Interceptor.attach(gate.address(engine,'_ZN4GAME8PlayMenu6UpdateEv'),{onLeave(){
-        if(done || ++calls<60)return;done=true;
+        if(done)return;
+        if(++calls>600){done=true;refuse(Error('Menu activation timed out'));return;}
         try {
           const instance=E('_ZN4GAME7gEngineE').readPointer(),game=E('_ZN4GAME11gGameEngineE').readPointer();
-          if(instance.isNull()||game.isNull())throw Error('Engine instance unavailable');
+          if(instance.isNull()||game.isNull())return;
           const archive=getArchive(instance),player=getPlayer(game);
-          if(archive.isNull()||!player.isNull())throw Error('Activation requires menu without player');
+          if(!player.isNull())throw Error('Activation requires menu without player');
+          if(archive.isNull())return;
+          done=true;
           if(isMap){
             report.menuProbe.map=tqActivateGladiatorsMap(engine,archive,player,mapConfig,gate,r=>{report.menuProbe.map=r;write();});
             if(report.menuProbe.map.status!=='ready-for-ModProbe')throw Error('Map setup incomplete');

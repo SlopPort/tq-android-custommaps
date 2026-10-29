@@ -1,0 +1,20 @@
+[
+  {
+    "name": "_ZN4GAME16CloudSaveManager8InstanceEv",
+    "rva": 13998116,
+    "size": 152,
+    "fnv1a": "246206d6"
+  },
+  {
+    "name": "_ZNK4GAME16CloudSaveManager14IsCloudEnabledEv",
+    "rva": 14001968,
+    "size": 32,
+    "fnv1a": "384e1dfa"
+  },
+  {
+    "name": "_ZN4GAME16CloudSaveManager15SetCloudEnabledEb",
+    "rva": 14001740,
+    "size": 56,
+    "fnv1a": "b9e54001"
+  }
+]

@@ -47,13 +47,14 @@ if a.enable_supported_databases or a.enable_profile_lab:
             + json.loads((root / 'android/bootstrap/map-profiles-5364.json').read_text()))
 if a.enable_profile_lab:
     names = ['resolve-selection.js', 'lab-database-probe.js', 'plan-save-path.js',
-        'resolve-save-profile.js', 'preflight-native-api.js', 'save-profile-runtime.js',
+        'resolve-save-profile.js', 'preflight-native-api.js', 'save-profile-runtime.js', 'local-only-cloud.js',
         'observe-engine-startup.js', 'gladiators-map-runtime.js', 'profile-loader.js']
     script = b'\n'.join((root / 'android/bootstrap' / name).read_bytes() for name in names)
     parameters.update(
         profilesRoot=['/data/user/0/com.hg.titanquestultimate/files/tqmods/save-profiles',
                       '/data/data/com.hg.titanquestultimate/files/tqmods/save-profiles'],
         liveSaveRoot='/storage/emulated/0/Android/data/com.hg.titanquestultimate/files/Preferences/SaveData/',
+        cloudApi=json.loads((root / 'android/bootstrap/cloud-policy-api-5364.json').read_text()),
         saveApi=json.loads((root / 'android/bootstrap/save-profile-api-5364.json').read_text()),
         mapApi=json.loads((root / 'android/bootstrap/map-api-5364.json').read_text()),
         gladiators=json.loads((root / 'android/bootstrap/gladiators-runtime-5364.json').read_text()))

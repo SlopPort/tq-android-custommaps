@@ -123,10 +123,10 @@ public final class ModManagerActivity extends Activity {
                 profile.setText(prepared ? "Separate save copy already prepared" : "Prepare separate save copy");
 
                 profile.setOnClickListener(v -> {
-                    if (prepared) { status.setText("A separate copy already exists. It has not been replaced; game use is not enabled yet."); return; }
+                    if (prepared) { status.setText("A separate copy already exists and has not been replaced. Use a supported profile-enabled loader to play from it."); return; }
                     if (!canBackUp()) return;
                     new android.app.AlertDialog.Builder(this).setTitle("Prepare copies for this mod?")
-                        .setMessage("Copies all current characters and their SaveData files into a separate profile. Originals remain unchanged. Playing from this profile is not enabled yet. Existing profiles are never replaced.")
+                        .setMessage("Copies all current characters and their SaveData files into a separate profile. Originals remain unchanged. Playing from this copy requires a supported profile-enabled loader. Existing profiles are never replaced.")
                         .setNegativeButton("Cancel", null)
                         .setPositiveButton("Prepare copy", (dialog, which) -> prepareSaveProfile(dir.getName())).show();
                 });
@@ -240,7 +240,7 @@ public final class ModManagerActivity extends Activity {
                 // canBackUp checked the current process; the busy gate blocks game startup.
                 SaveProfileStore.create(new File(external, "Preferences/SaveData"),
                     new File(getFilesDir(), "tqmods/save-profiles"), id, false);
-                message = "Separate save copy prepared. Originals are unchanged. The game does not use this profile yet.";
+                message = "Separate save copy prepared. Originals are unchanged. Profile creation alone does not confirm that the game is using it.";
             } catch (Exception error) { message = "Could not prepare save copy: " + error.getMessage(); }
             final String result = message;
             runOnUiThread(() -> { importPending = false; if (!isDestroyed()) { status.setText(result); refresh(); } });
