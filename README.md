@@ -18,7 +18,7 @@ It is experimental and unofficial. It works on one game build (3.0.5364, ARM64).
 3. Install `titan-quest-mods-1.0.apk` (allow installing from your browser or file manager when Android asks).
 4. Open **Titan Quest Mods**, tap **Allow root access**, then tap **Allow** in the Magisk window.
 
-If you use [TQ Android Perf](https://github.com/SlopPort/tq-android-perf) or [TQ Traders](https://github.com/SlopPort/tq-traders), update them to 2.4 and 1.4. The game closes itself when something is injected into it twice, so the mods module now carries Perf and Traders in its single injection, and the new versions stand back while it is active.
+**Perf and Traders are optional and not included.** This download contains only the mod loader. [TQ Android Perf](https://github.com/SlopPort/tq-android-perf) (graphics and speed) and [TQ Traders](https://github.com/SlopPort/tq-traders) (traders and respec) are separate Magisk modules that you install only if you want them. If you already use them, update them to 2.4 and 1.4. The game closes itself when something is injected into it twice, so when they are installed the mods module loads them in its own single injection, and the new versions stand back.
 
 ### Play
 

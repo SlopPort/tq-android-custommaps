@@ -11,7 +11,7 @@ You need a rooted phone with Magisk and Titan Quest installed (game build 3.0.53
 
 If Magisk refused because the window closed by itself: open **Magisk** → **Superuser**, switch on **Titan Quest Mods**, and tap **Allow root access** again.
 
-Using TQ Android Perf or TQ Traders? Update them to 2.4 and 1.4. Older versions would inject the game a second time, so the app shows "Mods are paused" until you update.
+TQ Android Perf and TQ Traders are not needed and not included. Already using them? Update them to 2.4 and 1.4. Older versions would inject the game a second time, so the app shows "Mods are paused" until you update. Without Perf installed, the Perf switch in the app stays off and greyed out.
 
 ## Before the first try
 
