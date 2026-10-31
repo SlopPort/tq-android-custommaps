@@ -8,8 +8,12 @@ let reads=0;const run=r=>ctx.tqResolveSelection(JSON.stringify(r),profiles,root,
 assert.equal(run({schema:1,id:null,database:null}).status,'vanilla');assert.equal(reads,0);
 const request={schema:1,id,database:root+'/'+id+'/database/mod.arz',size:3};
 assert.equal(run(request).status,'recognized');assert.equal(reads,1);
-assert.equal(run({...request,size:999}).status,'unsupported');assert.equal(reads,1);
+const unknown=run({...request,size:999,resources:[{path:root+'/'+id+'/resources/Text.arc',size:5}]});
+assert.equal(unknown.status,'content');assert.equal(reads,1);assert.equal(unknown.plan.resources.length,1);
+assert.equal(run({...request,size:999,customWorld:true}).status,'unsupported');
+assert.throws(()=>run({...request,size:999,resources:[{path:'/elsewhere/Text.arc',size:5}]}),/resource/);
+assert.throws(()=>run({...request,size:999,resources:[{path:root+'/'+id+'/a/Text.arc',size:5},{path:root+'/'+id+'/b/text.arc',size:5}]}),/Duplicate/);
 assert.equal(ctx.tqResolveSelection(JSON.stringify({...request,database:'/alias/'+id+'/database/mod.arz'}),profiles,[root,'/alias'],()=>bytes).status,'recognized');
 assert.throws(()=>ctx.tqResolveSelection(JSON.stringify({...request,database:'/other-app/'+id+'/database/mod.arz'}),profiles,[root,'/alias'],()=>bytes));
 for(const change of [{schema:2},{id:'../bad'},{database:'/external/mod.arz'},{database:root+'/'+id+'/../mod.arz'},{database:root+'/'+id+'/bad\\mod.arz'}])assert.throws(()=>run({...request,...change}));
-console.log('PASS: vanilla, supported fingerprint, unsupported size without read, schema and path rejection');
+console.log('PASS: vanilla, supported fingerprint, unknown database as content mod without read, custom world refused, schema and path rejection');

@@ -13,6 +13,9 @@ public final class ModStore {
         this.root = root.getCanonicalFile();
         if (!this.root.isDirectory() && !this.root.mkdirs()) throw new IOException("Cannot create mod storage");
     }
+    public static final class UnsupportedArchive extends IOException {
+        UnsupportedArchive() { super("7z or RAR archive"); }
+    }
     public static final class VariantRequired extends IOException {
         public final String[] variants;
         VariantRequired(String[] variants) { super("Choose a mod variant"); this.variants = variants; }
@@ -23,6 +26,12 @@ public final class ModStore {
     public synchronized File importFile(InputStream source, String displayName, String variant) throws IOException {
         String name = displayName == null ? "" : displayName.toLowerCase(Locale.ROOT);
         if (!name.endsWith(".zip") && !name.endsWith(".arz")) throw new IOException("Choose a ZIP or ARZ file");
+        // Many PC mods ship as 7z or RAR even when renamed; report that plainly.
+        source = new BufferedInputStream(source, 1 << 16);
+        source.mark(8); byte[] magic = new byte[4]; int got = source.read(magic); source.reset();
+        if (got == 4 && ((magic[0] == '7' && magic[1] == 'z' && (magic[2] & 0xff) == 0xbc)
+                || (magic[0] == 'R' && magic[1] == 'a' && magic[2] == 'r' && magic[3] == '!')))
+            throw new UnsupportedArchive();
         String id = UUID.randomUUID().toString();
         File stage = new File(root, ".import-" + id);
         if (!stage.mkdir()) throw new IOException("Cannot stage import");
@@ -52,8 +61,11 @@ public final class ModStore {
                         if (!seen.add(dest.getPath().toLowerCase(Locale.ROOT))) throw new IOException("Duplicate archive path");
                         if (entry.isDirectory()) continue;
                         String lower = path.toLowerCase(Locale.ROOT);
-                        if (!(lower.endsWith(".arz") || lower.endsWith(".arc") || lower.endsWith(".map") || lower.endsWith(".txt") || lower.endsWith(".md")))
-                            throw new IOException("Unsupported file in archive: " + path);
+                        if (isProgram(lower)) throw new IOException("Unsupported file in archive: " + path);
+                        // Loose PC install extras (textures, readmes, images) are not used here.
+                        if (!(lower.endsWith(".arz") || lower.endsWith(".arc") || lower.endsWith(".map") || lower.endsWith(".txt") || lower.endsWith(".md"))) {
+                            zip.closeEntry(); continue;
+                        }
                         copy(zip, dest, budget);
                         zip.closeEntry();
                     }
@@ -89,7 +101,7 @@ public final class ModStore {
                     throw new IOException("Unsupported ARZ header");
             }
             try (Writer title = new OutputStreamWriter(new FileOutputStream(new File(stage, ".title")), "UTF-8")) {
-                title.write((displayName == null ? "Imported mod" : displayName.replaceAll("[\\p{Cntrl}]", " ")) + (variant == null ? "" : " — " + variant));
+                title.write(friendlyName(displayName, variant));
             }
             File dest = new File(root, id);
             if (!stage.renameTo(dest)) throw new IOException("Cannot commit import");
@@ -98,6 +110,60 @@ public final class ModStore {
         } finally {
             if (!committed) removeStage(stage);
         }
+    }
+    private static boolean isProgram(String lower) {
+        for (String ext : new String[]{".so", ".dex", ".apk", ".jar", ".exe", ".dll", ".bat", ".cmd", ".sh", ".js", ".py", ".ps1", ".vbs"})
+            if (lower.endsWith(ext)) return true;
+        return false;
+    }
+    static String friendlyName(String displayName, String variant) {
+        String base = displayName == null ? "Mod" : displayName.replaceAll("[\\p{Cntrl}]", " ");
+        base = base.replaceAll("(?i)\\.(zip|arz)$", "").replace('_', ' ').trim();
+        if (base.isEmpty()) base = "Mod";
+        if (variant == null) return base;
+        String last = variant.substring(variant.lastIndexOf('/') + 1).replace('_', ' ').trim();
+        return last.equalsIgnoreCase(base) ? base : base + " (" + last + ")";
+    }
+    /** Removes one imported library entry and nothing outside it. */
+    public synchronized void remove(File directory) throws IOException {
+        File entry = directory.getCanonicalFile();
+        if (!entry.getParentFile().equals(root) || entry.getName().startsWith(".") || !entry.isDirectory())
+            throw new IOException("Not an installed library entry");
+        File trash = new File(root, ".remove-" + entry.getName());
+        if (!entry.renameTo(trash)) throw new IOException("Cannot remove mod");
+        removeStage(trash);
+    }
+    /** True when Maps.arc carries a real world map, which needs a dedicated adapter. */
+    public boolean customWorld(File directory) throws IOException {
+        for (File arc : resources(directory)) {
+            if (!arc.getName().equalsIgnoreCase("Maps.arc")) continue;
+            for (long size : arcMapSizes(arc)) if (size > 4096) return true;
+        }
+        return false;
+    }
+    static List<Long> arcMapSizes(File arc) throws IOException {
+        List<Long> sizes = new ArrayList<>();
+        try (RandomAccessFile file = new RandomAccessFile(arc, "r")) {
+            long length = file.length();
+            if (length < 28 || length > Integer.MAX_VALUE) throw new IOException("Damaged ARC file " + arc.getName());
+            byte[] head = new byte[28]; file.readFully(head);
+            java.nio.ByteBuffer h = java.nio.ByteBuffer.wrap(head).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+            if (head[0] != 'A' || head[1] != 'R' || head[2] != 'C') throw new IOException("Damaged ARC file " + arc.getName());
+            int files = h.getInt(8), parts = h.getInt(12), toc = h.getInt(24);
+            long records = length - 44L * files, names = toc + 12L * parts;
+            if (files < 0 || files > 100000 || parts < 0 || toc < 0 || records < names) throw new IOException("Damaged ARC file " + arc.getName());
+            byte[] table = new byte[44 * files]; file.seek(records); file.readFully(table);
+            java.nio.ByteBuffer t = java.nio.ByteBuffer.wrap(table).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+            for (int i = 0; i < files; i++) {
+                long size = t.getInt(44 * i + 12) & 0xffffffffL;
+                int nameLength = t.getInt(44 * i + 36), nameOffset = t.getInt(44 * i + 40);
+                if (nameLength < 0 || nameLength > 1024 || nameOffset < 0 || names + nameOffset + nameLength > records)
+                    throw new IOException("Damaged ARC file " + arc.getName());
+                byte[] name = new byte[nameLength]; file.seek(names + nameOffset); file.readFully(name);
+                if (new String(name, "ISO-8859-1").toLowerCase(Locale.ROOT).endsWith(".map")) sizes.add(size);
+            }
+        }
+        return sizes;
     }
     private static void keepSelected(File dir, File selected) throws IOException {
         File[] children = dir.listFiles();
@@ -179,7 +245,7 @@ public final class ModStore {
     public static String title(File dir) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(dir, ".title")), "UTF-8"))) {
             String text = reader.readLine();
-            return text == null ? dir.getName() : text;
+            return text == null ? dir.getName() : friendlyName(text, null);
         } catch (IOException e) { return dir.getName(); }
     }
 }

@@ -36,7 +36,7 @@ public final class SaveProfileStore {
         // Do not compare the original file count: saving and visiting new maps adds files.
         int[] entries = {0, 0};
         validateTree(saves.toPath(), 0, entries);
-        if (entries[1] == 0) throw new IOException("Separate save profile has no files");
+        if (entries[1] == 0 && !"0".equals(metadata.getProperty("files"))) throw new IOException("Separate save profile has no files");
         return saves;
     }
 
@@ -52,6 +52,25 @@ public final class SaveProfileStore {
                 else entries[1]++;
             }
         }
+    }
+    /** First start without any characters: an empty profile for this mod. */
+    public static synchronized File createEmpty(File profiles, String id) throws IOException {
+        if (id == null || !id.matches("[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}"))
+            throw new IOException("Invalid save profile ID");
+        File root = profiles.getCanonicalFile();
+        if (!root.isDirectory() && !root.mkdirs()) throw new IOException("Cannot create profile storage");
+        File target = new File(root, id);
+        if (Files.exists(target.toPath(), LinkOption.NOFOLLOW_LINKS)) throw new IOException("Profile already exists");
+        File stage = new File(root, ".creating-" + id + "-" + UUID.randomUUID());
+        if (!new File(stage, "SaveData").mkdirs()) throw new IOException("Cannot stage save profile");
+        try (FileOutputStream out = new FileOutputStream(new File(stage, "profile.properties"))) {
+            java.util.Properties metadata = new java.util.Properties();
+            metadata.setProperty("schema", "1"); metadata.setProperty("id", id);
+            metadata.setProperty("files", "0"); metadata.setProperty("runtimeBound", "false");
+            metadata.store(out, "Empty profile"); out.getFD().sync();
+        }
+        if (!stage.renameTo(target)) throw new IOException("Cannot commit save profile");
+        return new File(target, "SaveData");
     }
     public static synchronized File create(File liveSaves, File profiles, String id,
                                             boolean engineLoaded) throws IOException {

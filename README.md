@@ -1,45 +1,58 @@
 # Titan Quest mods. On Android.
 
-**PC-authored mods can do more than sit in a folder on your phone.** In our Android tests, LootPlus changed the game's database, and Gladiators loaded a custom map with its resources, saved a test character, and resumed after a restart.
+**A mod manager for Titan Quest on Android: add a PC mod from a file, tap Play, switch back to the original game with one tap.** Each mod gets its own copy of your characters, so your normal saves are not touched.
 
-This project is turning those results into a practical mod manager: **pick a mod, play with separate saves, then switch back to vanilla.** Parts of that workflow already work in an installed test build. It is still experimental—not a finished mod loader or a promise that every PC mod will work.
+It is experimental and unofficial. It works on one game build (3.0.5364, ARM64) and still needs a locally prepared game APK â€” see [Can I use it?](#can-i-use-it).
 
-### What has actually worked?
+### What it looks like to a player
 
-- **A database mod:** LootPlus activated from the manager, with three checked database values confirming the changes. ModProbe entered the world and saved into a separate profile.
-- **A custom map:** Gladiators mounted seven resource archives, entered its custom world, saved and reloaded through the manager on the same installed APK.
-- **Separate characters:** Creating and deleting a disposable character affected its mod profile. All **1,081 original save files** remained unchanged in that test.
-- **Switching back:** Selecting vanilla restored the monitored stock database values after a fresh start. That check covered character selection, not a full vanilla playthrough.
+1. Open **Titan Quest Mods**.
+2. Tap **Add a mod from a file** and pick the mod's ZIP from Downloads. The new mod is chosen automatically.
+3. Tap **Play**. The first time, the app makes a separate copy of your characters for this mod.
+4. To go back, tap **Original game (no mods)** and **Play**. If the game is running, the app reminds you to save and restarts it for you.
 
-Evidence: [manager-to-map roundtrip](reports/2026-10-28-integrated-profile-loader.md) · [profile character creation/deletion](reports/2026-10-28-profile-character-lifecycle.md) · [LootPlus profile test](reports/2026-10-28-lootplus-profile-background.md).
+The screen is in Polish on Polish phones and in English everywhere else. Backups of all characters and the optional Perf graphics module are under **Settings and backups**.
 
-### Can I use it yet?
+### Which mods work?
 
-**Only as a locally prepared experimental build; no ready-to-install game APK is provided.** Use disposable characters, not your main save. The integrated gameplay tests are restricted to ModProbe. A current cloud-save guard can close the game when it goes into the background; that is an unresolved release blocker. Item persistence in stashes, combined-mod gameplay and the complete installation workflow still need validation.
+| Kind of mod | Status |
+| --- | --- |
+| Items, skills, masteries, balance, loot (database + resources, normal world) | **Loaded automatically.** Tested: Masteries 1.03 (new class names in game), LootPlus 1.3, Halloween 2012 (loaded at character selection) |
+| Custom maps with their own world | Not yet. Mobile builds need navigation data that PC maps do not carry. Only Gladiators has an experimental adapter |
+| Several mods at once | Not yet; one mod per game start |
+| 7z or RAR downloads | Repack as ZIP on a computer for now; the app says so when you pick one |
 
-The recent results come from a locally prepared third-party **3.0.5364 APK tested on a rooted Redmi Note 8**. Setup from an unmodified Google Play copy and operation on a stock, unrooted phone remain unverified. The manager uses Android's file picker, but that alone does not prove a root-free installation.
+"Loaded" means the files were mounted and the mod's records were found in the game database. It does not mean every part of a mod was played through. Evidence: [generic content mods](reports/2026-10-31-generic-content-mods.md), [LootPlus profile](reports/2026-10-28-lootplus-profile-background.md), [map roundtrip](reports/2026-10-28-integrated-profile-loader.md).
 
-Start with the [plain-language guide](USAGE.md), explore the [Android prototype](android/README.md), or follow the [release checklist](RELEASE_MILESTONE.md).
+### Can I use it?
 
-Unofficial and not endorsed by the publisher. This repository contains original tools and documentation—not the game, APKs or mod assets. Supply your own lawfully obtained game copy and get mods from their authors. Purchase-check removal and DLC unlocking are outside the project's scope. See [publication boundaries](PUBLICATION.md).
+**Not as a one-tap install yet.** The manager and loader live inside the game app, so a game APK with them added has to be prepared locally. This repository never distributes game APKs, game files or mods. Tests ran on a rooted Redmi Note 8 (Android 16); setup from a Google Play copy on an unrooted phone is not verified, and a store build may refuse to run after being re-signed. Making installation possible without rebuilding the game is the main open problem.
 
-## Scope
+Use a backup before trying it (**Settings and backups â†’ Save a backup of my characters**).
 
-- Keep filesystem staging, engine discovery, activation, playable content, and save/reload results separate.
+## How it works
 
-- Use a disposable test character for any activation attempt.
+- **Manager** ([android/src](android/src/org/tqmods)): imports ZIP/ARZ files through Android's file picker into app-private storage, checks paths and sizes, records the choice and backs up or restores characters.
+- **Startup** ([GameBootstrapActivity](android/bootstrap/GameBootstrapActivity.java)): prepares the mod's save copy, freezes the choice for this process and starts an embedded Frida Gadget script before the engine loads.
+- **Loader** ([profile-loader.js](android/bootstrap/profile-loader.js)): checks the fingerprints of every engine function it uses, redirects the save folder to the mod's copy, keeps cloud sync off for mod saves, and activates the mod at character selection: [generic-mod-runtime.js](android/bootstrap/generic-mod-runtime.js) mounts ARCs, overlays the ARZ and registers mod text.
 
-- Do not infer binary compatibility from ARZ/ARC filenames or a MAP header.
+If anything does not match, the game is closed before a save can be written and the manager explains what happened in one sentence.
 
-- Existing Perf and Traders runtime modules were present during the initial menu check; this is not a clean stock-game test.
+## Known issues
 
-No game binaries, save files, third-party mod archives, credentials, or decompiled game source are included. Download third-party mods from their authors.
+- With Perf enabled, labels in the in-game pause menu can be tiny ([investigation](reports/2026-10-29-pause-menu-investigation.md)).
+- Database values that the engine read before character selection may stay at stock values.
+- Custom-world navigation: see the [single-level experiment](reports/2026-10-30-single-level-navigation.md).
 
-## Next steps
+## Developers
 
-1. Fix background/cloud handling while keeping mod saves isolated.
-2. Verify deliberate stash and relic-item persistence across save/restart/reload.
-3. Test a combined-mod gameplay package and explain conflicts clearly.
-4. Finish fresh-import, setup and recovery checks through the user interface.
+Run the host tests with Node.js and a JDK:
 
-XMAX activation remains unsupported; the inspected x2 engine record also changes unrelated mobile settings. See the [comparison](reports/2026-10-27-xmax-compatibility.md).
+```text
+for f in android/tests/*.js; do node "$f"; done
+python tools/check-publication.py
+```
+
+Build steps: [android/BUILD-TEST-APP.md](android/BUILD-TEST-APP.md). Research tools: [tools/README.md](tools/README.md). Open work: [TODO.md](TODO.md).
+
+Unofficial and not endorsed by the publisher. Supply your own lawfully obtained game and get mods from their authors. Purchase-check removal and DLC unlocking are outside this project's scope. See [publication boundaries](PUBLICATION.md).

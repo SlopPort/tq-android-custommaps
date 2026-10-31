@@ -1,5 +1,5 @@
 'use strict';
-// Opt-in integration test. ModProbe only until character-list isolation is verified.
+// Startup orchestrator: one selected mod per process, its own save profile.
 rpc.exports.init = function(stage, parameters) {
   const report={schema:1,pid:Process.id,stage,status:'preparing',modsActivated:false};
   const held=[];globalThis.__tqProfileLoader={report,held};
@@ -10,10 +10,11 @@ rpc.exports.init = function(stage, parameters) {
     const text=File.readAllText(parameters.selectionRequest),request=JSON.parse(text);
     if(request.startupPid!==Process.id)throw Error('Selection belongs to another startup');
     const selection=tqResolveSelection(text,parameters.profiles,parameters.libraryRoot,p=>File.readAllBytes(p));
-    if(!['vanilla','recognized','map-preflight-verified'].includes(selection.status))throw Error('Selected mod is unsupported');
+    if(!['vanilla','recognized','content','map-preflight-verified'].includes(selection.status))
+      throw Error(selection.reason==='custom-world'?'Custom maps are not supported yet':'Selected mod is unsupported');
     report.menuProbe={selection:{status:selection.status,id:selection.id,name:selection.name}};
     const profile=tqResolveSaveProfile(request,Process.id,parameters.profilesRoot,parameters.liveSaveRoot);
-    const isMap=selection.status==='map-preflight-verified';
+    const isMap=selection.status==='map-preflight-verified',isContent=selection.status==='content';
     let perfStarted=false;
     const startPerf=()=>{
       if(request.perfEnabled!==true||perfStarted)return;
@@ -35,43 +36,53 @@ rpc.exports.init = function(stage, parameters) {
     held.push(...tqObserveEngineStartup(engine=>{
       const groups=[parameters.expectedApi];
       if(profile)groups.push(parameters.saveApi,parameters.cloudApi);
-      if(isMap)groups.push(parameters.mapApi);
+      if(isMap||isContent)groups.push(parameters.mapApi);
       const gate=tqPreflightNativeApi(engine,groups.map(g=>g.map(a=>({...a,rva:Number(a.rva)}))));
       report.apiPreflight={status:'matched',count:gate.count};
-      let cloudPolicy;
-      if(profile){cloudPolicy=tqInstallLocalOnlyCloud(engine,gate,refuse);held.push(cloudPolicy);report.cloud=cloudPolicy.report;}
-      if(profile)held.push(tqInstallSaveProfile(engine,gate,{...profile,cloudPolicy,beforeLoad(){if(report.status!=='ready'||!report.modsActivated)throw Error('Mod activation is not ready; restart and wait at character selection');},allowedCharacter:'ModProbe',onReport:r=>{report.saveProfile=r;write();}}));
       const E=n=>engine.getExportByName(n);
       const fn=(n,r,a)=>new NativeFunction(gate.address(engine,n),r,a);
       const getArchive=fn('_ZN4GAME6Engine18GetDatabaseArchiveEv','pointer',['pointer']);
       const getPlayer=fn('_ZNK4GAME10GameEngine13GetMainPlayerEv','pointer',['pointer']);
       let calls=0,done=false;
+      // Returns true once the selection is active. Called from the menu loop and,
+      // if the player starts very quickly, from LoadGame before any save is read.
+      const activate=()=>{
+        if(done)return report.modsActivated||selection.status==='vanilla';
+        const instance=E('_ZN4GAME7gEngineE').readPointer(),game=E('_ZN4GAME11gGameEngineE').readPointer();
+        if(instance.isNull()||game.isNull())return false;
+        const archive=getArchive(instance),player=getPlayer(game);
+        if(!player.isNull())throw Error('Activation requires menu without player');
+        if(archive.isNull())return false;
+        done=true;
+        if(isMap){
+          report.menuProbe.map=tqActivateGladiatorsMap(engine,archive,player,mapConfig,gate,r=>{report.menuProbe.map=r;write();});
+          if(report.menuProbe.map.status!=='map-ready')throw Error('Map setup incomplete');
+          report.modsActivated=true;
+        }else if(isContent){
+          report.menuProbe.content=tqActivateGenericMod(engine,archive,player,selection.plan,gate,r=>{report.menuProbe.content=r;write();});
+          report.modsActivated=true;
+        }else if(selection.status==='recognized'){
+          report.menuProbe.database=tqLabDatabaseProbe(engine,archive,selection.config);
+          if(report.menuProbe.database.status!=='overrides-verified')throw Error('Database setup incomplete');
+          report.modsActivated=true;
+        }else if(parameters.profiles.length){
+          const sample=parameters.profiles.find(p=>p.kind!=='custom-map');
+          if(sample)report.menuProbe.database=tqLabDatabaseProbe(engine,archive,{...sample,activate:false});
+        }
+        report.status='ready';write();
+        // Install map call-site hooks before optional Perf can rewrite PLT calls.
+        if(isMap)startPerf();
+        return true;
+      };
+      let cloudPolicy;
+      if(profile){cloudPolicy=tqInstallLocalOnlyCloud(engine,gate,refuse);held.push(cloudPolicy);report.cloud=cloudPolicy.report;}
+      if(profile)held.push(tqInstallSaveProfile(engine,gate,{...profile,cloudPolicy,beforeLoad(){
+        if(!activate()||report.status!=='ready'||!report.modsActivated)throw Error('Mod activation is not ready; restart and wait at character selection');
+      },onReport:r=>{report.saveProfile=r;write();}}));
       held.push(Interceptor.attach(gate.address(engine,'_ZN4GAME8PlayMenu6UpdateEv'),{onLeave(){
         if(done)return;
         if(++calls>600){done=true;refuse(Error('Menu activation timed out'));return;}
-        try {
-          const instance=E('_ZN4GAME7gEngineE').readPointer(),game=E('_ZN4GAME11gGameEngineE').readPointer();
-          if(instance.isNull()||game.isNull())return;
-          const archive=getArchive(instance),player=getPlayer(game);
-          if(!player.isNull())throw Error('Activation requires menu without player');
-          if(archive.isNull())return;
-          done=true;
-          if(isMap){
-            report.menuProbe.map=tqActivateGladiatorsMap(engine,archive,player,mapConfig,gate,r=>{report.menuProbe.map=r;write();});
-            if(report.menuProbe.map.status!=='ready-for-ModProbe')throw Error('Map setup incomplete');
-            report.modsActivated=true;
-          }else if(selection.status==='recognized'){
-            report.menuProbe.database=tqLabDatabaseProbe(engine,archive,selection.config);
-            if(report.menuProbe.database.status!=='overrides-verified')throw Error('Database setup incomplete');
-            report.modsActivated=true;
-          }else if(parameters.profiles.length){
-            const sample=parameters.profiles.find(p=>p.kind!=='custom-map');
-            if(sample)report.menuProbe.database=tqLabDatabaseProbe(engine,archive,{...sample,activate:false});
-          }
-          report.status='ready';write();
-          // Install map call-site hooks before optional Perf can rewrite PLT calls.
-          if(isMap)startPerf();
-        }catch(e){refuse(e);}
+        try{activate();}catch(e){refuse(e);}
       }}));
       report.status='waiting-for-menu';write();
     },refuse));

@@ -1,310 +1,374 @@
 package org.tqmods;
 
 import android.app.Activity;
-import android.os.Bundle;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.util.AtomicFile;
-import org.json.JSONObject;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.View;
 import android.widget.*;
+import org.json.JSONObject;
 import java.io.*;
 import java.util.concurrent.*;
 
 /** Embed in the game APK: this activity must share the game's app UID. */
 public final class ModManagerActivity extends Activity {
+    static final int BG = 0xff15120e, CARD = 0xff241f18, CARD_ON = 0xff3a2f1c, GOLD = 0xffd9a441,
+        TEXT = 0xfff2ebdd, MUTED = 0xffb5a991, GREEN = 0xff3e8e41, WARN = 0xffe0a030, ERROR = 0xffe06a50;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
-    private TextView status;
-    private TextView runtime;
-    private LinearLayout list;
-    private Button add;
+    private final android.os.Handler ui = new android.os.Handler(android.os.Looper.getMainLooper());
     private ModStore store;
     private ImportSnapshot pending;
-    private static boolean selectionPending;
-    private static boolean importPending;
-    private boolean ownsOperation;
-    private final android.os.Handler uiHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private static boolean selectionPending, importPending;
+    private boolean ownsOperation, showSettings;
+    private String message; private int messageColor = MUTED;
+    private LinearLayout root;
+    private ScrollView scroll;
     private final Runnable waitForOperation = new Runnable() {
         public void run() {
             if (isDestroyed()) return;
-            if (store != null) refresh();
-            if (isBusy()) uiHandler.postDelayed(this, 200);
+            render();
+            if (isBusy()) ui.postDelayed(this, 300);
         }
     };
     public static boolean isBusy() { return selectionPending || importPending; }
-    private LinearLayout controls;
-    private void updateControls() {
-        setControlsEnabled(controls, !selectionPending && !importPending && store != null);
-    }
-    private void setControlsEnabled(android.view.View view, boolean enabled) {
-        if (view instanceof Button) view.setEnabled(enabled);
-        if (view instanceof android.view.ViewGroup) {
-            android.view.ViewGroup group = (android.view.ViewGroup) view;
-            for (int i = 0; i < group.getChildCount(); i++) setControlsEnabled(group.getChildAt(i), enabled);
-        }
-    }
+
     public void onCreate(Bundle state) {
         super.onCreate(state);
-        LinearLayout layout = new LinearLayout(this); layout.setOrientation(1); layout.setPadding(24,24,24,24);
-        controls = layout;
-        status = new TextView(this); status.setText("Experimental mod library. Save and close the game before applying a different selection.");
-        runtime = new TextView(this);
-        add = new Button(this); add.setText("Add mod (ZIP / ARZ)");
-        list = new LinearLayout(this); list.setOrientation(1);
-        layout.addView(status); layout.addView(runtime);
-        Switch perf = new Switch(this); perf.setText("Perf - engine optimizations and graphics menu");
-        try { perf.setChecked(RuntimeFeatures.perf(getFilesDir())); }
-        catch (Exception error) { status.setText("Cannot read Perf settings: " + error.getMessage()); perf.setEnabled(false); }
-        perf.setOnCheckedChangeListener((button, checked) -> {
-            try { RuntimeFeatures.setPerf(getFilesDir(), checked); status.setText("Perf " + (checked ? "enabled" : "disabled") + " for the next fresh start. Save and close the app before restarting."); }
-            catch (Exception error) { status.setText("Could not save Perf settings: " + error.getMessage()); }
-        });
-        layout.addView(perf);
-        Button pin = new Button(this); pin.setText("Add manager to Home screen");
-        pin.setOnClickListener(v -> {
-            android.content.pm.ShortcutManager shortcuts = getSystemService(android.content.pm.ShortcutManager.class);
-            if (shortcuts == null || !shortcuts.isRequestPinShortcutSupported()) { status.setText("Add Titan Quest Mods from your app drawer to the Home screen."); return; }
-            Intent target = new Intent(Intent.ACTION_MAIN); target.setClassName(getPackageName(), "org.tqmods.Launcher");
-            android.graphics.Bitmap icon = android.graphics.Bitmap.createBitmap(96, 96, android.graphics.Bitmap.Config.ARGB_8888);
-            android.graphics.drawable.Drawable art = getApplicationInfo().loadIcon(getPackageManager());
-            art.setBounds(0, 0, 96, 96); art.draw(new android.graphics.Canvas(icon));
-            android.content.pm.ShortcutInfo shortcut = new android.content.pm.ShortcutInfo.Builder(this, "tq-mod-manager")
-                .setShortLabel("TQ Mods + Perf").setLongLabel("Titan Quest Mods and Perf")
-                .setIcon(android.graphics.drawable.Icon.createWithBitmap(icon))
-                .setIntent(target).build();
-            shortcuts.requestPinShortcut(shortcut, null);
-        });
-        layout.addView(pin); layout.addView(add); layout.addView(list);
-        Button vanilla = new Button(this); vanilla.setText("Select vanilla (no mod)");
-        layout.addView(vanilla);
-        vanilla.setOnClickListener(v -> select(null));
-        if (getPackageName().equals("com.hg.titanquestultimate")) {
-            Button backup = new Button(this); backup.setText("Export character backup (ZIP)"); layout.addView(backup);
-            backup.setOnClickListener(v -> {
-                if (!canBackUp()) return;
-                Intent target = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-                target.addCategory(Intent.CATEGORY_OPENABLE); target.setType("application/zip");
-                target.putExtra(Intent.EXTRA_TITLE, "TitanQuest-saves-" + System.currentTimeMillis() + ".zip");
-                startActivityForResult(target, 101);
-            });
-            Button restore = new Button(this); restore.setText("Restore character backup"); layout.addView(restore);
-            restore.setOnClickListener(v -> {
-                if (!canBackUp()) return;
-                new android.app.AlertDialog.Builder(this).setTitle("Restore all characters from a backup?")
-                    .setMessage("Choose a ZIP exported by this manager. It replaces the current SaveData folder after checksum verification. The previous folder is retained on this phone. Close the game first.")
-                    .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Choose backup", (dialog, which) -> {
-                        Intent input = new Intent(Intent.ACTION_OPEN_DOCUMENT); input.addCategory(Intent.CATEGORY_OPENABLE);
-                        input.setType("application/zip"); startActivityForResult(input, 102);
-                    }).show();
-            });
-            Button start = new Button(this); start.setText("Open game"); layout.addView(start);
-            start.setOnClickListener(v -> {
-                if (selectionPending || importPending) return;
-                Intent game = new Intent(); game.setClassName(getPackageName(), "org.tqmods.GameBootstrapActivity");
-                try { startActivity(game); } catch (Exception error) { status.setText("Game bootstrap unavailable: " + error.getMessage()); }
-            });
-            Button close = new Button(this); close.setText("Close app for a fresh start"); layout.addView(close);
-            close.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
-                .setTitle("Have you saved your character?")
-                .setMessage("This closes the game process. Unsaved progress will be lost. Afterwards open Titan Quest Mods again, choose a mod or vanilla, then tap Open game.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Saved - close app", (dialog, which) -> {
-                    if (!selectionPending && !importPending) android.os.Process.killProcess(android.os.Process.myPid());
-                }).show());
+        getWindow().setStatusBarColor(BG); getWindow().setNavigationBarColor(BG);
+        root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(dp(18), dp(22), dp(18), dp(28));
+        scroll = new ScrollView(this); scroll.setBackgroundColor(BG); scroll.setFillViewport(true);
+        scroll.addView(root); setContentView(scroll);
+        try { store = new ModStore(new File(getFilesDir(), "tqmods/library")); }
+        catch (IOException e) { say(Texts.importFailed(e.getMessage()), ERROR); }
+        render();
+    }
+    protected void onResume() { super.onResume(); waitForOperation.run(); }
+    protected void onPause() { ui.removeCallbacks(waitForOperation); super.onPause(); }
+
+    // ---- State -------------------------------------------------------------------------------
+    private boolean engineLoaded() {
+        try (BufferedReader maps = new BufferedReader(new FileReader("/proc/self/maps"))) {
+            String line;
+            while ((line = maps.readLine()) != null) if (line.contains("libtq.so")) return true;
+        } catch (IOException ignored) { return true; } // Unknown: behave as if the game runs.
+        return false;
+    }
+    private String selectedId() {
+        try {
+            JSONObject request = new JSONObject(new String(new AtomicFile(new File(getFilesDir(), "tqmods/request.json")).readFully(), "UTF-8"));
+            return request.isNull("id") ? null : request.getString("id");
+        } catch (Exception absent) { return null; }
+    }
+    private JSONObject report() {
+        try { return new JSONObject(new String(new AtomicFile(new File(getFilesDir(), "bootstrap-status.json")).readFully(), "UTF-8")); }
+        catch (Exception absent) { return null; }
+    }
+    private File entry(String id) { return new File(getFilesDir(), "tqmods/library/" + id); }
+    private String name(String id) { return id == null ? Texts.vanilla() : ModStore.title(entry(id)); }
+    private static boolean same(String a, String b) { return a == null ? b == null : a.equals(b); }
+
+    // ---- Layout ------------------------------------------------------------------------------
+    private void render() {
+        if (root == null) return;
+        root.removeAllViews();
+        boolean running = engineLoaded(), busy = isBusy() || store == null;
+        String selected = selectedId();
+        if (selected != null && !entry(selected).isDirectory()) selected = null;
+        JSONObject report = report();
+        boolean current = report != null && report.optInt("pid") == android.os.Process.myPid();
+        String active = null;
+        if (current) {
+            JSONObject menu = report.optJSONObject("menuProbe");
+            JSONObject choice = menu == null ? null : menu.optJSONObject("selection");
+            if (choice != null && !choice.isNull("id")) active = choice.optString("id", null);
         }
-        ScrollView scroll = new ScrollView(this); scroll.addView(layout); setContentView(scroll);
-        try { store = new ModStore(new File(getFilesDir(), "tqmods/library")); refresh(); }
-        catch (IOException e) { status.setText(e.getMessage()); add.setEnabled(false); }
+
+        text(Texts.title(), 26, GOLD, true);
+        text(Texts.subtitle(), 15, MUTED, false).setPadding(0, dp(2), 0, dp(14));
+
+        // What is happening now, in one sentence.
+        if (running && current) {
+            String status = report.optString("status");
+            if (status.equals("refused")) banner(Texts.stateFailed(Texts.explain(report.optString("error"))), ERROR, report.optString("error"));
+            else if (active == null) banner(Texts.stateRunningVanilla(), GREEN, null);
+            else if (report.optBoolean("modsActivated")) banner(Texts.stateRunning(name(active)), GREEN, null);
+            else banner(Texts.stateWaiting(name(active)), WARN, null);
+        } else if (!running && report != null && report.optString("status").equals("refused")) {
+            banner(Texts.lastFailed(Texts.explain(report.optString("error"))), WARN, report.optString("error"));
+        }
+        if (message != null) banner(message, messageColor, null);
+
+        // The one big button.
+        String playLabel;
+        if (busy) playLabel = Texts.working();
+        else if (running && same(selected, active)) playLabel = Texts.returnToGame();
+        else if (running) playLabel = Texts.restartWith(name(selected));
+        else playLabel = Texts.play(name(selected));
+        Button play = button(playLabel, GREEN, Color.WHITE, 20);
+        play.setEnabled(!busy);
+        final String target = selected; final String now = active;
+        play.setOnClickListener(v -> onPlay(target, now, running));
+        root.addView(play, wide(dp(68), dp(4), dp(20)));
+
+        text(Texts.chooseHeader(), 18, TEXT, true).setPadding(0, dp(4), 0, dp(8));
+        modCard(null, Texts.vanilla(), Texts.vanillaHint(), null, selected == null, busy);
+        File[] mods = store == null ? new File[0] : store.installed();
+        java.util.Arrays.sort(mods, (a, b) -> ModStore.title(a).compareToIgnoreCase(ModStore.title(b)));
+        for (File dir : mods) {
+            String kind = ModKind.of(store, dir);
+            String badge = kind.equals(ModKind.MAP) ? Texts.badgeMap()
+                : kind.equals(ModKind.TESTED) || kind.equals(ModKind.MAP_SUPPORTED) ? Texts.badgeTested() : Texts.badgeExperimental();
+            String hint = kind.equals(ModKind.MAP) ? Texts.hintMap() : kind.equals(ModKind.MAP_SUPPORTED) ? Texts.hintMapSupported() : Texts.hintContent();
+            modCard(dir.getName(), ModStore.title(dir), hint, badge, dir.getName().equals(selected), busy);
+        }
+
+        Button add = button(Texts.addMod(), CARD, GOLD, 17);
+        outline(add, GOLD); add.setEnabled(!busy);
         add.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE); intent.setType("*/*");
             startActivityForResult(intent, 100);
         });
-        updateControls();
+        root.addView(add, wide(dp(56), dp(10), dp(6)));
+        text(mods.length == 0 ? Texts.steps() : Texts.addHint(), 14, MUTED, false).setPadding(dp(4), dp(4), dp(4), dp(18));
+
+        Button more = button((showSettings ? "▾  " : "▸  ") + Texts.more(), BG, TEXT, 16);
+        more.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+        more.setOnClickListener(v -> { showSettings = !showSettings; render(); });
+        root.addView(more, wide(dp(52), 0, 0));
+        if (showSettings) settings(running, busy);
     }
-    private void refresh() {
-        list.removeAllViews();
-        String selected = null;
-        AtomicFile requestFile = new AtomicFile(new File(getFilesDir(), "tqmods/request.json"));
-        try {
-            JSONObject request = new JSONObject(new String(requestFile.readFully(), "UTF-8"));
-            if (!request.isNull("id")) selected = request.getString("id");
-        } catch (FileNotFoundException absent) { /* No selection yet. */ }
-        catch (Exception error) { status.setText("Cannot read saved selection. Select a mod or vanilla again."); }
-        for (File dir : store.installed()) {
-            TextView row = new TextView(this);
-            row.setText(ModStore.title(dir) + (dir.getName().equals(selected)
-                ? "\nSelected for next fresh start; selection alone does not confirm activation."
-                : "\nImported; compatibility not tested")); row.setPadding(0,16,0,16);
-            list.addView(row);
-            Button choose = new Button(this); choose.setText("Select this mod");
-            choose.setOnClickListener(v -> select(dir.getName())); list.addView(choose);
-            if (getPackageName().equals("com.hg.titanquestultimate")) {
-                Button profile = new Button(this);
-                boolean prepared = new File(getFilesDir(), "tqmods/save-profiles/" + dir.getName() + "/SaveData").isDirectory();
-                profile.setText(prepared ? "Separate save copy already prepared" : "Prepare separate save copy");
 
-                profile.setOnClickListener(v -> {
-                    if (prepared) { status.setText("A separate copy already exists and has not been replaced. Use a supported profile-enabled loader to play from it."); return; }
-                    if (!canBackUp()) return;
-                    new android.app.AlertDialog.Builder(this).setTitle("Prepare copies for this mod?")
-                        .setMessage("Copies all current characters and their SaveData files into a separate profile. Originals remain unchanged. Playing from this copy requires a supported profile-enabled loader. Existing profiles are never replaced.")
-                        .setNegativeButton("Cancel", null)
-                        .setPositiveButton("Prepare copy", (dialog, which) -> prepareSaveProfile(dir.getName())).show();
-                });
-                list.addView(profile);
-            }
-
+    private void modCard(String id, String title, String hint, String badge, boolean chosen, boolean busy) {
+        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(16), dp(14), dp(16), dp(14));
+        GradientDrawable shape = new GradientDrawable(); shape.setCornerRadius(dp(14));
+        shape.setColor(chosen ? CARD_ON : CARD); if (chosen) shape.setStroke(dp(2), GOLD);
+        card.setBackground(shape);
+        LinearLayout top = new LinearLayout(this); top.setGravity(Gravity.CENTER_VERTICAL);
+        TextView name = label(title, 18, TEXT, true); top.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
+        if (chosen) top.addView(label(Texts.selected(), 15, GOLD, true));
+        card.addView(top);
+        if (badge != null) {
+            boolean map = badge.equals(Texts.badgeMap());
+            TextView b = label(badge, 13, map ? ERROR : badge.equals(Texts.badgeTested()) ? GREEN : WARN, true);
+            b.setPadding(0, dp(4), 0, 0); card.addView(b);
         }
-        runtime.setText("No runtime confirmation in this process.");
-        try {
-            AtomicFile report = new AtomicFile(new File(getFilesDir(), "bootstrap-status.json"));
-            JSONObject state = new JSONObject(new String(report.readFully(), "UTF-8"));
-            if (state.getInt("pid") == android.os.Process.myPid()) {
-                JSONObject menu = state.optJSONObject("menuProbe");
-                JSONObject database = menu == null ? null : menu.optJSONObject("database");
-                JSONObject map = menu == null ? null : menu.optJSONObject("map");
-                JSONObject choice = menu == null ? null : menu.optJSONObject("selection");
-                String detail = database != null ? database.optString("status")
-                    : choice != null ? choice.optString("status") : "waiting for character selection";
-                String message;
-                if (state.optString("status").equals("refused")) message = "Startup was refused. Close the app and check the selected mod before retrying.";
-                else if (state.optBoolean("modsActivated") && map != null && map.optString("status").equals("ready-for-ModProbe")) message = "Experimental map activated for ModProbe only. Use a disposable test character.";
-                else if (detail.equals("overrides-verified")) message = "Database changes verified in this process. Gameplay compatibility is not guaranteed.";
-                else if (detail.equals("baseline-verified")) message = "The monitored database values match the unmodified game.";
-                else if (detail.equals("vanilla")) message = "No mod requested for this process.";
-                else if (detail.equals("map-preflight-verified")) message = "Map files match the tested package. This loader has not activated the map.";
-                else if (detail.equals("unsupported")) message = "Selected file is not supported yet. This loader did not activate it.";
-                else if (detail.contains("error") || detail.contains("mismatch") || detail.equals("refused"))
-                    message = "Activation check failed. Close the app before playing or retrying.";
-                else message = "Open character selection to check the selected mod.";
-                runtime.setText(message + " Changing selection requires closing the app and a fresh start.");
-            }
-        } catch (Exception absent) { /* No current runtime report. */ }
-        updateControls();
+        TextView h = label(hint, 14, MUTED, false); h.setPadding(0, dp(4), 0, 0); card.addView(h);
+        if (id != null) {
+            TextView remove = label(Texts.remove(), 14, ERROR, false);
+            remove.setPadding(0, dp(10), dp(12), dp(2));
+            remove.setOnClickListener(v -> { if (!isBusy()) confirmRemove(id, title); });
+            card.addView(remove, new LinearLayout.LayoutParams(-2, -2));
+        }
+        card.setClickable(true);
+        card.setOnClickListener(v -> {
+            if (busy) return;
+            if (id != null && !ModKind.playable(ModKind.of(store, entry(id)))) { say(Texts.unsupportedMap(), WARN); render(); return; }
+            select(id);
+        });
+        root.addView(card, wide(-2, 0, dp(10)));
     }
-    protected void onResume() { super.onResume(); waitForOperation.run(); }
-    protected void onPause() { uiHandler.removeCallbacks(waitForOperation); super.onPause(); }
+
+    private void settings(boolean running, boolean busy) {
+        LinearLayout box = new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(14), dp(8), dp(14), dp(12));
+        GradientDrawable shape = new GradientDrawable(); shape.setCornerRadius(dp(14)); shape.setColor(CARD); box.setBackground(shape);
+        Switch perf = new Switch(this); perf.setText(Texts.perf()); perf.setTextColor(TEXT);
+        perf.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17); perf.setPadding(0, dp(8), 0, dp(4));
+        try { perf.setChecked(RuntimeFeatures.perf(getFilesDir())); } catch (Exception error) { perf.setEnabled(false); }
+        perf.setOnCheckedChangeListener((b, checked) -> {
+            try { RuntimeFeatures.setPerf(getFilesDir(), checked); } catch (Exception error) { say(error.getMessage(), ERROR); render(); }
+        });
+        box.addView(perf);
+        TextView ph = label(Texts.perfHint(), 13, MUTED, false); ph.setPadding(0, 0, 0, dp(10)); box.addView(ph);
+        if (getPackageName().equals("com.hg.titanquestultimate")) {
+            settingButton(box, Texts.backup(), busy, v -> {
+                if (!stopped()) return;
+                Intent target = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                target.addCategory(Intent.CATEGORY_OPENABLE); target.setType("application/zip");
+                target.putExtra(Intent.EXTRA_TITLE, "TitanQuest-characters-" + new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(new java.util.Date()) + ".zip");
+                startActivityForResult(target, 101);
+            });
+            settingButton(box, Texts.restore(), busy, v -> {
+                if (!stopped()) return;
+                new AlertDialog.Builder(this).setTitle(Texts.restoreTitle()).setMessage(Texts.restoreBody())
+                    .setNegativeButton(Texts.cancel(), null)
+                    .setPositiveButton(Texts.chooseBackup(), (d, w) -> {
+                        Intent input = new Intent(Intent.ACTION_OPEN_DOCUMENT); input.addCategory(Intent.CATEGORY_OPENABLE);
+                        input.setType("application/zip"); startActivityForResult(input, 102);
+                    }).show();
+            });
+        }
+        settingButton(box, Texts.shortcut(), busy, v -> pinShortcut());
+        if (running) settingButton(box, Texts.closeGame(), busy, v -> new AlertDialog.Builder(this)
+            .setTitle(Texts.saveFirstTitle()).setMessage(Texts.saveFirstBody())
+            .setNegativeButton(Texts.cancel(), null)
+            .setPositiveButton(Texts.savedClose(), (d, w) -> { if (!isBusy()) android.os.Process.killProcess(android.os.Process.myPid()); }).show());
+        root.addView(box, wide(-2, dp(4), 0));
+    }
+    private void settingButton(LinearLayout box, String label, boolean busy, View.OnClickListener action) {
+        Button b = button(label, CARD_ON, TEXT, 16); b.setEnabled(!busy); b.setOnClickListener(action);
+        box.addView(b, wide(dp(52), dp(6), 0));
+    }
+
+    // ---- Small view helpers ------------------------------------------------------------------
+    private int dp(int v) { return Math.round(v * getResources().getDisplayMetrics().density); }
+    private LinearLayout.LayoutParams wide(int height, int top, int bottom) {
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, height); p.topMargin = top; p.bottomMargin = bottom; return p;
+    }
+    private TextView label(String s, int sp, int color, boolean bold) {
+        TextView v = new TextView(this); v.setText(s); v.setTextColor(color); v.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        if (bold) v.setTypeface(Typeface.DEFAULT_BOLD); v.setLineSpacing(0, 1.15f); return v;
+    }
+    private TextView text(String s, int sp, int color, boolean bold) { TextView v = label(s, sp, color, bold); root.addView(v); return v; }
+    private Button button(String s, int bg, int fg, int sp) {
+        Button b = new Button(this); b.setText(s); b.setAllCaps(false); b.setTextColor(fg);
+        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp); b.setTypeface(Typeface.DEFAULT_BOLD);
+        GradientDrawable shape = new GradientDrawable(); shape.setCornerRadius(dp(14)); shape.setColor(bg); b.setBackground(shape);
+        b.setPadding(dp(16), 0, dp(16), 0); return b;
+    }
+    private void outline(Button b, int color) { ((GradientDrawable) b.getBackground()).setStroke(dp(2), color); }
+    private void banner(String s, int color, String detail) {
+        LinearLayout box = new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(14), dp(12), dp(14), dp(12));
+        GradientDrawable shape = new GradientDrawable(); shape.setCornerRadius(dp(12)); shape.setColor(CARD); shape.setStroke(dp(2), color);
+        box.setBackground(shape);
+        box.addView(label(s, 15, TEXT, false));
+        if (detail != null && !detail.isEmpty()) { TextView d = label(Texts.details() + detail, 11, MUTED, false); d.setPadding(0, dp(6), 0, 0); box.addView(d); }
+        root.addView(box, wide(-2, 0, dp(10)));
+    }
+    private void say(String s, int color) { message = s; messageColor = color; if (scroll != null) scroll.post(() -> scroll.smoothScrollTo(0, 0)); }
+
+    // ---- Actions -----------------------------------------------------------------------------
+    private void onPlay(String selected, String active, boolean running) {
+        if (isBusy()) return;
+        if (selected != null && !ModKind.playable(ModKind.of(store, entry(selected)))) { say(Texts.unsupportedMap(), WARN); render(); return; }
+        if (!running) { startGame(false); return; }
+        if (same(selected, active)) {
+            Intent game = new Intent(); game.setClassName(getPackageName(), "com.hg.titanquest.MainActivity");
+            game.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(game); return;
+        }
+        new AlertDialog.Builder(this).setTitle(Texts.saveFirstTitle()).setMessage(Texts.restartBody(name(selected)))
+            .setNegativeButton(Texts.cancel(), null)
+            .setPositiveButton(Texts.savedRestart(), (d, w) -> { if (!isBusy()) startGame(true); }).show();
+    }
+    private void startGame(boolean restart) {
+        Intent game = new Intent(); game.setClassName(getPackageName(), "org.tqmods.GameBootstrapActivity");
+        game.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        game.putExtra("restart", restart);
+        try { startActivity(game); } catch (Exception error) { say(Texts.startFailed(error.getMessage()), ERROR); render(); return; }
+        // The engine cannot be unloaded: end this process so Android starts the game afresh.
+        if (restart) Runtime.getRuntime().exit(0);
+    }
+    private void pinShortcut() {
+        android.content.pm.ShortcutManager shortcuts = getSystemService(android.content.pm.ShortcutManager.class);
+        if (shortcuts == null || !shortcuts.isRequestPinShortcutSupported()) return;
+        Intent target = new Intent(Intent.ACTION_MAIN); target.setClassName(getPackageName(), "org.tqmods.Launcher");
+        android.graphics.Bitmap icon = android.graphics.Bitmap.createBitmap(96, 96, android.graphics.Bitmap.Config.ARGB_8888);
+        android.graphics.drawable.Drawable art = getApplicationInfo().loadIcon(getPackageManager());
+        art.setBounds(0, 0, 96, 96); art.draw(new android.graphics.Canvas(icon));
+        shortcuts.requestPinShortcut(new android.content.pm.ShortcutInfo.Builder(this, "tq-mod-manager")
+            .setShortLabel("TQ Mods").setLongLabel(Texts.title())
+            .setIcon(android.graphics.drawable.Icon.createWithBitmap(icon)).setIntent(target).build(), null);
+    }
+    private boolean stopped() {
+        if (isBusy()) return false;
+        if (engineLoaded()) { say(Texts.closeGameFirst(), WARN); render(); return false; }
+        return true;
+    }
+    private void confirmRemove(String id, String title) {
+        new AlertDialog.Builder(this).setTitle(Texts.removeTitle(title)).setMessage(Texts.removeBody())
+            .setNegativeButton(Texts.cancel(), null)
+            .setPositiveButton(Texts.remove(), (d, w) -> {
+                boolean wasSelected = id.equals(selectedId());
+                try { store.remove(entry(id)); say(Texts.removed(), MUTED); } catch (IOException e) { say(e.getMessage(), ERROR); }
+                if (wasSelected) select(null); else render();
+            }).show();
+    }
+
     private void select(String id) {
-        if (selectionPending || importPending || store == null) return;
-        selectionPending = true;
-        status.setText("Saving selection. Please wait...");
-        updateControls();
-        // Persist intent only. Never interpret this preference as runtime activation evidence.
+        if (isBusy() || store == null) return;
+        selectionPending = true; render();
+        // Persist intent only. The runtime report is the only activation evidence.
         io.execute(() -> {
-            boolean committed = false;
-            try {
-                JSONObject request = new JSONObject(); request.put("schema", 1);
-                request.put("id", id == null ? JSONObject.NULL : id);
-                request.put("database", id == null ? JSONObject.NULL
-                    : store.database(new File(getFilesDir(), "tqmods/library/" + id)).getPath());
-                request.put("size", id == null ? 0
-                    : store.database(new File(getFilesDir(), "tqmods/library/" + id)).length());
-                org.json.JSONArray resources = new org.json.JSONArray();
-                if (id != null) for (File resource : store.resources(new File(getFilesDir(), "tqmods/library/" + id))) {
-                    JSONObject item = new JSONObject(); item.put("path", resource.getPath());
-                    item.put("size", resource.length()); resources.put(item);
-                }
-                request.put("resources", resources); // Inventory, not permission to mount.
-                AtomicFile file = new AtomicFile(new File(getFilesDir(), "tqmods/request.json"));
-                FileOutputStream stream = null;
-                try {
-                    stream = file.startWrite();
-                    stream.write(request.toString().getBytes("UTF-8"));
-                    file.finishWrite(stream); stream = null;
-                } catch (Exception error) { if (stream != null) file.failWrite(stream); throw error; }
-                committed = true;
-            } catch (Exception error) { committed = false; }
-            final boolean saved = committed;
+            String error = null;
+            try { writeSelection(id); } catch (Exception e) { error = e.getMessage(); }
+            final String failure = error;
             runOnUiThread(() -> {
                 selectionPending = false;
-                if (isDestroyed()) return;
-                status.setText(!saved ? "Could not save selection. Try again."
-                    : id == null ? "Vanilla selected for next fresh start. This does not unload an already active mod."
-                    : "Selection saved for next fresh start. Only the recognized LootPlus specimen has laboratory activation evidence.");
-                if (store != null) refresh();
+                if (failure != null) say(failure, ERROR); else message = null;
+                if (!isDestroyed()) render();
             });
         });
     }
+    private void writeSelection(String id) throws Exception {
+        JSONObject request = new JSONObject(); request.put("schema", 1);
+        request.put("id", id == null ? JSONObject.NULL : id);
+        File database = id == null ? null : store.database(entry(id));
+        request.put("database", database == null ? JSONObject.NULL : database.getPath());
+        request.put("size", database == null ? 0 : database.length());
+        request.put("name", id == null ? JSONObject.NULL : ModStore.title(entry(id)));
+        request.put("customWorld", id != null && store.customWorld(entry(id)));
+        org.json.JSONArray resources = new org.json.JSONArray();
+        if (id != null) for (File resource : store.resources(entry(id))) {
+            JSONObject item = new JSONObject(); item.put("path", resource.getPath());
+            item.put("size", resource.length()); resources.put(item);
+        }
+        request.put("resources", resources);
+        AtomicFile file = new AtomicFile(new File(getFilesDir(), "tqmods/request.json"));
+        FileOutputStream stream = null;
+        try {
+            stream = file.startWrite(); stream.write(request.toString().getBytes("UTF-8"));
+            file.finishWrite(stream); stream = null;
+        } finally { if (stream != null) file.failWrite(stream); }
+    }
+
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
-        if (request == 101) {
-            if (result == RESULT_OK && data != null && data.getData() != null && canBackUp()) exportBackup(data.getData());
-            return;
-        }
-        if (request == 102) {
-            if (result == RESULT_OK && data != null && data.getData() != null && canBackUp()) restoreBackup(data.getData());
-            return;
-        }
-        if (request != 100 || result != RESULT_OK || data == null || data.getData() == null) return;
-        final android.net.Uri uri = data.getData();
-        stageUri(uri);
+        if (result != RESULT_OK || data == null || data.getData() == null) return;
+        if (request == 101 && stopped()) exportBackup(data.getData());
+        else if (request == 102 && stopped()) restoreBackup(data.getData());
+        else if (request == 100) stageUri(data.getData());
     }
-    private boolean canBackUp() {
-        if (selectionPending || importPending) return false;
-        try (BufferedReader maps = new BufferedReader(new FileReader("/proc/self/maps"))) {
-            String line;
-            while ((line = maps.readLine()) != null) if (line.contains("libtq.so")) {
-                status.setText("Save your character, close the app, then reopen Titan Quest Mods. Export the backup before Open game.");
-                return false;
-            }
-            return true;
-        } catch (IOException error) {
-            status.setText("Cannot verify that the game is stopped. Backup was not started."); return false;
-        }
+    private void background(Runnable task) {
+        ownsOperation = true; importPending = true; message = null; render();
+        io.execute(task);
     }
-    private void prepareSaveProfile(String id) {
-        if (!canBackUp()) return;
-        ownsOperation = true; importPending = true; updateControls();
-        status.setText("Preparing separate save copy. Please wait...");
-        io.execute(() -> {
-            String message;
-            try {
-                File external = getExternalFilesDir(null);
-                if (external == null) throw new IOException("Game storage unavailable");
-                // canBackUp checked the current process; the busy gate blocks game startup.
-                SaveProfileStore.create(new File(external, "Preferences/SaveData"),
-                    new File(getFilesDir(), "tqmods/save-profiles"), id, false);
-                message = "Separate save copy prepared. Originals are unchanged. Profile creation alone does not confirm that the game is using it.";
-            } catch (Exception error) { message = "Could not prepare save copy: " + error.getMessage(); }
-            final String result = message;
-            runOnUiThread(() -> { importPending = false; if (!isDestroyed()) { status.setText(result); refresh(); } });
-        });
+    private void done(String text, int color) {
+        runOnUiThread(() -> { importPending = false; say(text, color); if (!isDestroyed()) render(); });
     }
     private void exportBackup(android.net.Uri target) {
-        ownsOperation = true;
-        importPending = true; updateControls(); status.setText("Exporting character backup. Please wait...");
-        io.execute(() -> {
+        background(() -> {
             File snapshot = null;
-            String message;
             try {
                 File external = getExternalFilesDir(null);
                 if (external == null) throw new IOException("Game storage unavailable");
                 snapshot = File.createTempFile("save-backup-", ".zip", getCacheDir());
                 int count;
-                try (OutputStream output = new FileOutputStream(snapshot)) {
-                    count = SaveBackup.write(new File(external, "Preferences/SaveData"), output);
-                }
-                try (InputStream input = new FileInputStream(snapshot);
-                     OutputStream output = getContentResolver().openOutputStream(target, "wt")) {
+                try (OutputStream output = new FileOutputStream(snapshot)) { count = SaveBackup.write(new File(external, "Preferences/SaveData"), output); }
+                try (InputStream input = new FileInputStream(snapshot); OutputStream output = getContentResolver().openOutputStream(target, "wt")) {
                     if (output == null) throw new IOException("Cannot open backup destination");
                     byte[] buffer = new byte[65536]; int read;
                     while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
                 }
-                message = "Backup exported: " + count + " files with SHA-256 checksums. Keep it outside the game's app storage. Restore is available through this manager.";
-            } catch (Exception error) {
-                message = "Backup failed: " + error.getMessage() + ". Do not use the destination file; it may be incomplete.";
-            } finally { if (snapshot != null) snapshot.delete(); }
-            final String result = message;
-            runOnUiThread(() -> { importPending = false; if (!isDestroyed()) { status.setText(result); updateControls(); } });
+                done(Texts.backupDone(count), GREEN);
+            } catch (Exception error) { done(Texts.backupFailed(error.getMessage()), ERROR); }
+            finally { if (snapshot != null) snapshot.delete(); }
         });
     }
     private void restoreBackup(android.net.Uri source) {
-        ownsOperation = true;
-        importPending = true; updateControls(); status.setText("Verifying and restoring backup. Please wait...");
-        io.execute(() -> {
-            File snapshot = null; String message;
+        background(() -> {
+            File snapshot = null;
             try {
                 File external = getExternalFilesDir(null);
                 if (external == null) throw new IOException("Game storage unavailable");
@@ -314,64 +378,61 @@ public final class ModManagerActivity extends Activity {
                     byte[] buffer = new byte[65536]; long total = 0; int count;
                     while ((count = input.read(buffer)) != -1) {
                         total += count; if (total > 512L * 1024 * 1024) throw new IOException("Backup input too large");
-                        output.write(buffer,0,count);
+                        output.write(buffer, 0, count);
                     }
                 }
-                File retained = SaveRestore.restore(snapshot, new File(external, "Preferences/SaveData"));
-                message = "Backup restored. Previous saves retained in Preferences/" + retained.getName() + ". Keep your exported ZIP too.";
-            } catch (Exception error) { message = "Restore failed: " + error.getMessage() + ". Do not start the game until recovery is checked."; }
+                SaveRestore.restore(snapshot, new File(external, "Preferences/SaveData"));
+                done(Texts.restoreDone(), GREEN);
+            } catch (Exception error) { done(Texts.restoreFailed(error.getMessage()), ERROR); }
             finally { if (snapshot != null) snapshot.delete(); }
-            final String result = message;
-            runOnUiThread(() -> { importPending = false; if (!isDestroyed()) { status.setText(result); updateControls(); } });
         });
     }
     private void stageUri(final android.net.Uri uri) {
-        ownsOperation = true;
-        importPending = true; updateControls(); status.setText("Copying selected file…");
-        io.execute(() -> {
+        background(() -> {
             try {
                 String name = null;
                 try (Cursor cursor = getContentResolver().query(uri, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null)) {
                     if (cursor != null && cursor.moveToFirst()) name = cursor.getString(0);
                 }
+                String lower = name == null ? "" : name.toLowerCase(java.util.Locale.ROOT);
+                if (lower.endsWith(".7z") || lower.endsWith(".rar")) { finishImport(Texts.archive7z(), WARN, null); return; }
                 try (InputStream stream = getContentResolver().openInputStream(uri)) {
                     if (stream == null) throw new IOException("Cannot open selected file");
                     pending = ImportSnapshot.create(new File(getCacheDir(), "mod-inputs"), stream, name);
                 }
                 importPending(null);
-            } catch (Exception e) { finishImport("Import failed: " + e.getMessage()); }
+            } catch (Exception e) { finishImport(Texts.importFailed(e.getMessage()), ERROR, null); }
         });
     }
     // Runs on the single IO executor, including each variant retry.
     private void importPending(final String variant) {
-            String message;
-            try {
-                try (InputStream stream = pending.open()) {
-                    store.importFile(stream, pending.name, variant);
-                }
-                message = "Imported. Select this mod and use a compatible loader; importing alone does not activate it.";
-            } catch (ModStore.VariantRequired choice) {
-                runOnUiThread(() -> {
-                    if (isDestroyed()) return;
-                    new android.app.AlertDialog.Builder(this).setTitle("Choose variant")
-                        .setItems(choice.variants, (dialog, which) -> io.execute(() -> importPending(choice.variants[which])))
-                        .setNegativeButton("Cancel", (dialog, which) -> io.execute(() -> finishImport("Import cancelled")))
-                        .setOnCancelListener(dialog -> io.execute(() -> finishImport("Import cancelled"))).show();
-                });
-                return;
-            } catch (Exception e) { message = "Import failed: " + e.getMessage(); }
-            finishImport(message);
+        try {
+            File added;
+            try (InputStream stream = pending.open()) { added = store.importFile(stream, pending.name, variant); }
+            boolean playable = ModKind.playable(ModKind.of(store, added));
+            finishImport(playable ? Texts.importedChosen(ModStore.title(added)) : Texts.imported(ModStore.title(added)), GREEN, playable ? added.getName() : null);
+        } catch (ModStore.UnsupportedArchive archive) {
+            finishImport(Texts.archive7z(), WARN, null);
+        } catch (ModStore.VariantRequired choice) {
+            String[] labels = new String[choice.variants.length];
+            for (int i = 0; i < labels.length; i++) labels[i] = choice.variants[i].substring(choice.variants[i].lastIndexOf('/') + 1).replace('_', ' ');
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                new AlertDialog.Builder(this).setTitle(Texts.chooseVariant())
+                    .setItems(labels, (d, which) -> io.execute(() -> importPending(choice.variants[which])))
+                    .setNegativeButton(Texts.cancel(), (d, w) -> io.execute(() -> finishImport(null, MUTED, null)))
+                    .setOnCancelListener(d -> io.execute(() -> finishImport(null, MUTED, null))).show();
+            });
+        } catch (Exception e) { finishImport(Texts.importFailed(e.getMessage()), ERROR, null); }
     }
-    private void finishImport(String message) {
-            if (pending != null) {
-                try { pending.close(); } catch (IOException e) { message += "; " + e.getMessage(); }
-                pending = null;
-            }
-            final String text = message;
-            runOnUiThread(() -> { importPending = false; if (!isDestroyed()) { status.setText(text); refresh(); } });
+    private void finishImport(String text, int color, String selectId) {
+        if (pending != null) { try { pending.close(); } catch (IOException ignored) { } pending = null; }
+        // A newly added playable mod becomes the choice: one less step for the player.
+        if (selectId != null) try { writeSelection(selectId); } catch (Exception ignored) { }
+        runOnUiThread(() -> { importPending = false; ownsOperation = false; say(text, color); if (!isDestroyed()) render(); });
     }
     protected void onDestroy() {
-        if (ownsOperation) io.execute(() -> finishImport("Import cancelled"));
+        if (ownsOperation) io.execute(() -> finishImport(null, MUTED, null));
         io.shutdown(); super.onDestroy();
     }
 }

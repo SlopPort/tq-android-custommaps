@@ -1,9 +1,10 @@
 'use strict';
 // Experimental adapter for the verified Gladiators specimen on build 5364.
-// ModProbe-only until final profile/startup acceptance. No hot unload or rollback.
+// Applies to every character in the map's separate save profile. No hot unload or rollback.
 // Configuration and API fingerprints must come from a trusted built-in profile.
 function tqActivateGladiatorsMap(engine, archive, player, config, gate, onReport) {
- const report={schema:1,pid:Process.id,status:'preflight',events:[],character:'ModProbe'};
+ const report={schema:1,pid:Process.id,status:'preflight',events:[],character:config.character||'all'};
+ const inScope=name=>!config.character||name===config.character;
  const save=()=>onReport(report);
  const held=[];globalThis.__tqGladiatorsHeld=held;
  const hash=b=>{let h=2166136261;for(const v of b)h=Math.imul(h^v,16777619)>>>0;return ('00000000'+h.toString(16)).slice(-8);};
@@ -72,7 +73,7 @@ function tqActivateGladiatorsMap(engine, archive, player, config, gate, onReport
 
   let depth=0;
   const wide=p=>{const first=p.readU8(),n=(first&1)?p.add(8).readU64().toNumber():first>>1;if(n>128)throw Error('Name too long');const q=(first&1)?p.add(16).readPointer():p.add(4);let s='';for(let i=0;i<n;i++)s+=String.fromCodePoint(q.add(i*4).readU32());return s;};
-  // Laboratory fix: preserve a verified custom map identity for ModProbe only.
+  // Preserve a verified custom map identity for characters saved in this map.
   const enumThreads=new Map();
   const enumName='_ZN4GAME4Game13AddSavedGamesERNSt6__ndk16vectorINS0_18SaveGameInfoStructENS1_9allocatorIS3_EEEERKNS1_12basic_stringIcNS1_11char_traitsIcEENS4_IcEEEESE_RKNS8_IwNS9_IwEENS4_IwEEEEbbSE_RKNS_8UniqueIdE';
   const narrow=p=>{const b=p.readU8(),n=(b&1)?p.add(8).readU64().toNumber():b>>>1;if(n>4096)throw Error('Invalid map string');return n?((b&1)?p.add(16).readPointer():p.add(1)).readUtf8String(n):'';};
@@ -82,7 +83,7 @@ function tqActivateGladiatorsMap(engine, archive, player, config, gate, onReport
   if(Array.from(new Uint8Array(enumSite.readByteArray(4))).join(',')!==enumExpected)throw Error('Enumeration call mismatch');
   const mapCString=Memory.allocUtf8String('maps/gladiators.map');held.push(mapCString);
   held.push(Interceptor.attach(engine.getExportByName(enumName),{
-   onEnter(args){try{this.target=wide(args[4])==='ModProbe';if(this.target){const id=this.threadId;enumThreads.set(id,(enumThreads.get(id)||0)+1);}}catch(e){report.events.push({event:'enum-guard-error',error:String(e)});save();}},
+   onEnter(args){try{this.target=inScope(wide(args[4]));if(this.target){const id=this.threadId;enumThreads.set(id,(enumThreads.get(id)||0)+1);}}catch(e){report.events.push({event:'enum-guard-error',error:String(e)});save();}},
    onLeave(){if(this.target){const id=this.threadId;const n=(enumThreads.get(id)||1)-1;if(n)enumThreads.set(id,n);else enumThreads.delete(id);}}
   }));
   held.push(Interceptor.attach(enumSite,{
@@ -92,10 +93,10 @@ function tqActivateGladiatorsMap(engine, archive, player, config, gate, onReport
   const setLevel=F('_ZN4GAME8GameInfo12SetLevelNameERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE','void',['pointer','pointer']);
   const mapName=str(chosen.path);
   held.push(Interceptor.attach(engine.getExportByName('_ZNK4GAME13LoadingScreen11GetSaveGameERNS_4Game18SaveGameInfoStructEb'),{
-   onEnter(args){try{const info=args[0].add(0x458).readPointer();if(!info.isNull()&&wide(playerName(info))==='ModProbe'){setLevel(info,mapName);report.events.push({event:'select-map-save',name:'ModProbe',map:chosen.path});save();}}catch(e){report.events.push({event:'save-selection-error',error:String(e)});save();}}
+   onEnter(args){try{const info=args[0].add(0x458).readPointer();if(!info.isNull()&&inScope(wide(playerName(info)))){setLevel(info,mapName);report.events.push({event:'select-map-save',map:chosen.path});save();}}catch(e){report.events.push({event:'save-selection-error',error:String(e)});save();}}
   }));
   held.push(Interceptor.attach(engine.getExportByName('_ZN4GAME4Game8LoadGameERKNS0_18SaveGameInfoStructEb'),{
-   onEnter(args){try{const name=wide(args[1].add(0x18));this.active=name==='ModProbe';if(this.active)depth++;report.events.push({event:'load-game',name,redirectEnabled:this.active});save();}catch(e){report.error=String(e);save();}},
+   onEnter(args){try{const name=wide(args[1].add(0x18));this.active=inScope(name);if(this.active)depth++;report.events.push({event:'load-game',name,redirectEnabled:this.active});save();}catch(e){report.error=String(e);save();}},
    onLeave(){if(this.active)depth--;report.events.push({event:'load-game-return'});save();}
   }));
   const destination=Memory.allocUtf8String(chosen.path);held.push(destination);
@@ -103,7 +104,7 @@ function tqActivateGladiatorsMap(engine, archive, player, config, gate, onReport
    onEnter(args){this.row={event:'world-load',original:args[1].readUtf8String(),redirected:depth>0};if(depth>0){args[1]=destination;this.row.path=chosen.path;}report.events.push(this.row);save();},
    onLeave(value){this.row.result=value.toInt32();save();}
   }));
-  report.status='ready-for-ModProbe';report.group0=count0();
+  report.status='map-ready';report.group0=count0();
  }catch(e){report.status='error-restart-required';report.error=String(e);try{save();}finally{new NativeFunction(Process.getModuleByName('libc.so').getExportByName('abort'),'void',[],{exceptions:'propagate'})();}}
  save();return report;
 }

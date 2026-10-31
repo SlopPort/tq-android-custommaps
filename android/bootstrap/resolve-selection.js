@@ -9,14 +9,34 @@ function tqResolveSelection(text, profiles, libraryRoot, readBytes) {
   const contained=typeof request.database==='string' && roots.some(root=>typeof root==='string' && request.database.startsWith(root+'/'+request.id+'/'));
   if(!contained || /\\|\x00/.test(request.database)
     || request.database.split('/').some(p=>p==='.'||p==='..') || !request.database.toLowerCase().endsWith('.arz'))throw Error('Invalid library database path');
+  const generic=()=>{
+    // Unknown packages load as content mods on the stock world. Resources must
+    // stay inside the selected library entry; custom worlds need an adapter.
+    if(request.customWorld===true)return {status:'unsupported',reason:'custom-world',id:request.id};
+    const entry=roots.map(root=>root+'/'+request.id+'/').find(prefix=>request.database.startsWith(prefix));
+    const list=Array.isArray(request.resources)?request.resources:[];
+    if(list.length>64)throw Error('Too many mod resources');
+    const seen=new Set(),resources=[];
+    for(const item of list){
+      if(!item||typeof item.path!=='string'||!item.path.startsWith(entry)||/\\|\x00/.test(item.path)
+        ||item.path.split('/').some(p=>p==='.'||p==='..')||!item.path.toLowerCase().endsWith('.arc')
+        ||!Number.isSafeInteger(item.size)||item.size<1)throw Error('Invalid mod resource path');
+      // Same-named archives would shadow each other in the engine namespace.
+      const name=item.path.slice(item.path.lastIndexOf('/')+1).toLowerCase();
+      if(seen.has(name))throw Error('Duplicate mod resource '+name);
+      seen.add(name);resources.push({path:item.path,size:item.size});
+    }
+    return {status:'content',id:request.id,name:request.name||'mod',
+      plan:{root:entry,database:request.database,resources}};
+  };
   const candidates=profiles.filter(p=>p.size===request.size);
-  if(candidates.length===0)return {status:'unsupported',id:request.id};
+  if(candidates.length===0)return generic();
   const bytes=readBytes(request.database);
   if(bytes.byteLength!==request.size)throw Error('Selected database changed');
   let hash=2166136261;for(const b of new Uint8Array(bytes))hash=Math.imul(hash^b,16777619)>>>0;
   const fingerprint=('00000000'+hash.toString(16)).slice(-8);
   const profile=candidates.find(p=>p.fnv1a===fingerprint);
-  if(!profile)return {status:'unsupported',id:request.id};
+  if(!profile)return generic();
   if (profile.kind === 'custom-map') {
     const relative = value => typeof value === 'string' && value.length <= 1024
       && !/[\\\x00:]/.test(value) && !value.startsWith('/')
