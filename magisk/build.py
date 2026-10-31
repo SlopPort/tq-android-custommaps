@@ -61,7 +61,7 @@ out.parent.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
     for f in FILES:
         data = (MODULE / f).read_bytes()
-        if f.endswith('.sh') or f == 'module.prop':
+        if f != 'skip_mount':  # Every module file is text; Android needs LF line endings.
             data = data.replace(b'\r\n', b'\n')
         z.writestr(f, data)
     z.writestr('loader.js', loader())
