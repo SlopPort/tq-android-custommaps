@@ -269,7 +269,7 @@ public final class ModManagerActivity extends Activity {
                     }).show();
             });
         }
-        if (embedded) settingButton(box, Texts.shortcut(), busy, v -> pinShortcut());
+        settingButton(box, Texts.shortcut(), false, v -> pinShortcut());
         if (running) settingButton(box, Texts.closeGame(), busy, v -> new AlertDialog.Builder(this)
             .setTitle(Texts.saveFirstTitle()).setMessage(Texts.saveFirstBody())
             .setNegativeButton(Texts.cancel(), null)
@@ -344,7 +344,8 @@ public final class ModManagerActivity extends Activity {
     private void pinShortcut() {
         android.content.pm.ShortcutManager shortcuts = getSystemService(android.content.pm.ShortcutManager.class);
         if (shortcuts == null || !shortcuts.isRequestPinShortcutSupported()) return;
-        Intent target = new Intent(Intent.ACTION_MAIN); target.setClassName(getPackageName(), "org.tqmods.Launcher");
+        Intent target = new Intent(Intent.ACTION_MAIN);
+        target.setClassName(getPackageName(), embedded ? "org.tqmods.Launcher" : ModManagerActivity.class.getName());
         android.graphics.Bitmap icon = android.graphics.Bitmap.createBitmap(96, 96, android.graphics.Bitmap.Config.ARGB_8888);
         android.graphics.drawable.Drawable art = getApplicationInfo().loadIcon(getPackageManager());
         art.setBounds(0, 0, 96, 96); art.draw(new android.graphics.Canvas(icon));

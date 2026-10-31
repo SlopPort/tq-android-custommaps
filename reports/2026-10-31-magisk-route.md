@@ -32,7 +32,16 @@ The engine therefore cannot be caught before it loads. The save folder is first 
 | Switch to the original game | No mod, no save hooks, Traders hosted; the mod's files removed from the game folder |
 | Original saves afterwards | 1,081 files compared by SHA-256 with the pre-test backup: 0 changed, 0 missing, 0 added |
 
-Root actions in these tests were run with the same helper command the app uses, from ADB. Granting root to the app is the phone owner's decision and was not done by the test script. The app's own root path (status, launch, stop, Perf switch, backup and restore) still needs a run on the phone with root granted.
+Most root actions above were run with the same helper command the app uses, from ADB. After the phone owner granted root to the app, the app's own path was checked too:
+
+| Test | Result |
+| --- | --- |
+| First status call from the app | "Titan Quest is not installed": root granted to an app runs in that app's mount namespace, where Android hides other apps' data. Fixed: the helper continues in the global namespace (`nsenter -t 1 -m`) |
+| Status after the fix | Game found; Play enabled |
+| Play in the app | Game started with Masteries; one injection; loader waiting for the menu |
+| App while the game runs | "… will load when the game shows the character list" and **Return to the game** |
+
+The app's Perf switch, backup and restore were not run on the phone yet.
 
 ## Limits and notes
 

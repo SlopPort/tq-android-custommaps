@@ -9,6 +9,11 @@ TQ=$DATA/files/tqmods
 LIVE=/storage/emulated/0/Android/data/$PKG/files/Preferences/SaveData
 PERF=/data/adb/modules/tq_autopatch
 umask 077
+# Root granted to an app runs in that app's mount namespace, where Android hides other apps' data.
+# Continue in the global namespace (init's), where the game's folders are visible.
+if [ ! -d "$DATA" ] && [ -z "$TQMODS_GLOBAL" ] && command -v nsenter >/dev/null; then
+ export TQMODS_GLOBAL=1; exec nsenter -t 1 -m -- /system/bin/sh "$0" "$@"
+fi
 fail() { echo "error=$*"; exit 1; }
 uuid_ok() { echo "$1" | grep -Eq '^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$'; }
 running() { pidof $PKG >/dev/null; }
