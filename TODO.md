@@ -9,7 +9,7 @@ Updated: 2026-10-31. Goal: a mod loader that a non-technical player can use: add
 3. **Content-mod coverage.** Check new-character mastery selection with Masteries, LootPlus drops after the generic path, Halloween gameplay, and records the engine caches before character selection.
 4. **Custom worlds.** Turn the single-level navigation rebuild into a bounded load-time step; then generalize the Gladiators adapter to other recognized maps.
 5. **Several mods at once** with a clear conflict report (record and resource overlaps).
-6. **Waiting indicator in game** while a mod activates, instead of relying on the post-crash message.
+6. **Waiting indicator in game** while a mod activates, instead of explaining only after the game was stopped.
 7. **Perf pause-menu labels** regression.
 8. Rename/describe mods in the list, show disk usage, delete a mod's character copy on request.
 

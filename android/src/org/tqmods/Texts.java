@@ -32,7 +32,7 @@ final class Texts {
     static String remove() { return t("Remove", "Usuń"); }
     static String removeTitle(String name) { return t("Remove \"", "Usunąć „") + name + t("\"?", "”?"); }
     static String removeBody() { return t("The mod file is deleted from the phone. Characters you played with this mod are kept and come back if you add the same mod again.",
-        "Plik moda zostanie usunięty z telefonu. Postacie grane z tym modem zostają zachowane."); }
+        "Plik moda zostanie usunięty z telefonu. Postacie grane z tym modem zostają zachowane i wrócą, jeśli dodasz ten sam mod ponownie."); }
     static String cancel() { return t("Cancel", "Anuluj"); }
     static String ok() { return t("OK", "OK"); }
     static String more() { return t("Settings and backups", "Ustawienia i kopie zapasowe"); }
@@ -80,13 +80,13 @@ final class Texts {
     static String closeGameFirst() { return t("Close the game first (Settings → Close the game), then try again.", "Najpierw zamknij grę (Ustawienia → Zamknij grę), potem spróbuj ponownie."); }
     static String removed() { return t("Mod removed.", "Mod usunięty."); }
     static String unsupportedMap() { return t("Custom maps cannot be played yet. Choose another mod.", "Własnych map nie da się jeszcze grać. Wybierz inny mod."); }
-    static String rootIntro() { return t("To start the game with mods, this app needs root access from Magisk. Tap the button below, then tap Allow (Grant) in the Magisk window within a few seconds.",
-        "Żeby uruchamiać grę z modami, aplikacja potrzebuje dostępu roota z Magiska. Naciśnij przycisk poniżej, a potem w ciągu kilku sekund naciśnij Zezwól w oknie Magiska."); }
+    static String rootIntro() { return t("To start the game with mods, this app needs root access from Magisk. Tap the button below, then tap Grant in the Magisk window before its countdown runs out.",
+        "Żeby uruchamiać grę z modami, aplikacja potrzebuje dostępu roota z Magiska. Naciśnij przycisk poniżej, a potem naciśnij Zezwól w oknie Magiska, zanim skończy się odliczanie."); }
     static String allowRoot() { return t("Allow root access", "Zezwól na dostęp roota"); }
     static String noRoot() { return t("Root access was refused. Open Magisk → Superuser, switch on Titan Quest Mods, then tap the button again.",
-        "Dostęp roota został odrzucony. Otwórz Magisk → Superużytkownik, włącz Titan Quest Mods i naciśnij przycisk ponownie."); }
-    static String noModule() { return t("The Titan Quest Mods loader module is not installed. Install tq-mods-magisk.zip in Magisk (Modules → Install from storage) and restart the phone.",
-        "Nie zainstalowano modułu loadera. Zainstaluj tq-mods-magisk.zip w Magisku (Moduły → Instaluj z pamięci) i uruchom telefon ponownie."); }
+        "Dostęp roota został odrzucony. Otwórz Magisk → Superuser, włącz Titan Quest Mods i naciśnij przycisk ponownie."); }
+    static String noModule() { return t("The Titan Quest Mods loader module is not installed. Install the tq-mods-magisk ZIP in Magisk (Modules → Install from storage) and reboot the phone.",
+        "Nie zainstalowano modułu loadera. Zainstaluj plik ZIP tq-mods-magisk w Magisku (zakładka Moduły) i uruchom telefon ponownie."); }
     static String noGame() { return t("Titan Quest is not installed on this phone.", "Titan Quest nie jest zainstalowany na tym telefonie."); }
     static String blocked(String why) { return t("Mods are paused: ", "Mody są wstrzymane: ") + why + "."; }
     static String perfMissing() { return t("Needs the TQ Android Perf Magisk module (2.4 or newer).", "Wymaga modułu Magisk TQ Android Perf (2.4 lub nowszy)."); }

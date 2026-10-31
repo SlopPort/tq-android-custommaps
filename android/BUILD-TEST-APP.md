@@ -1,4 +1,14 @@
-# Build the standalone importer test app
+# Build the apps
+
+## Titan Quest Mods (released app)
+
+```text
+python tools/build-import-test.py --manager --jdk "PATH_TO_JDK" --sdk "PATH_TO_ANDROID_SDK" --out "NEW_OUTPUT_DIRECTORY"
+```
+
+This produces `titan-quest-mods-unsigned.apk` (package `org.tqmods.manager`, label **Titan Quest Mods**). Sign it with your own key (Android SDK `apksigner`) and keep the key outside the repository. The app does nothing useful without the `tq_mods` Magisk module, built with `python magisk/build.py`.
+
+## Standalone importer test app
 
 This builds only this project's Java code. It contains no game files and cannot activate mods inside Titan Quest. It is useful for testing the file picker, variant selection and import persistence without replacing the game.
 

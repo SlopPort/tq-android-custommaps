@@ -1,5 +1,7 @@
 # Practical release milestone
 
+> Historical checklist from the embedded-APK development route (until 2026-10-30). The released product is the Magisk route: see the [README](README.md) and the [Magisk route report](reports/2026-10-31-magisk-route.md).
+
 The requested "80%" milestone is an acceptance checklist, not a measured completion
 percentage. It is not reached until the supported end-to-end flow passes without
 routine ADB use. Google Play installation remains explicitly unverified.

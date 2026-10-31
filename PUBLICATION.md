@@ -10,9 +10,13 @@ Original project source, synthetic tests, build instructions, and limited factua
 
 Game APKs (original or modified), original DEX/native libraries, extracted or decompiled game source, assets, database/archive files, saves, signing keys and downloaded third-party mods. Do not attach these to issues, actions artifacts, releases or Git LFS. An ignore rule does not remove previously tracked files or history.
 
-Users supply their own lawfully obtained copy. No game downloader, cracked-APK links, purchase-check removal, DLC unlocks or entitlement bypass is part of the supported workflow. If a legitimate build rejects modification, record the limitation; do not silently substitute an unlocked build or disable its checks. Current experiments do not establish support for an unmodified store release.
+Users supply their own lawfully obtained copy. No game downloader, cracked-APK links, purchase-check removal, DLC unlocks or entitlement bypass is part of the supported workflow. If a legitimate build rejects modification, record the limitation; do not silently substitute an unlocked build or disable its checks. The supported route (Magisk module plus a separate app) leaves the installed game unchanged. It has not yet been tested with a Google Play copy; say so wherever support is described.
 
 Link to mod authors' distribution pages. Redistribute a mod only with explicit permission or a license that permits it. Generic import support does not certify every mod's rights or compatibility.
+
+## What releases contain
+
+Only the app built from this repository's source (signed with the project's own key, which stays outside the repository), the Magisk module built by `magisk/build.py`, and the unmodified `frida-inject` binary it bundles (see [THIRD-PARTY.md](THIRD-PARTY.md)). Never a game APK, game files, saves or mods.
 
 ## Release checks
 

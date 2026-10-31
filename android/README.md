@@ -1,4 +1,6 @@
-# Rootless mod library prototype
+# Manager app source
+
+The classes in `src/org/tqmods` build two ways: as the released **Titan Quest Mods** app (`tools/build-import-test.py --manager`, package `org.tqmods.manager`), which reaches the game through the `tq_mods` Magisk module, and embedded in a locally rebuilt game APK, the older development route. Everything below this paragraph documents that embedded route and its history; it is not how players install the project.
 
 
 
