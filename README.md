@@ -2,7 +2,12 @@
 
 **A mod manager for Titan Quest on Android: add a PC mod from a file, tap Play, switch back to the original game with one tap.** Each mod gets its own copy of your characters, so your normal saves are not touched.
 
-It is experimental and unofficial. It works on one game build (3.0.5364, ARM64) and still needs a locally prepared game APK — see [Can I use it?](#can-i-use-it).
+It is experimental and unofficial. It works on one game build (3.0.5364, ARM64).
+
+> **Requirement: a rooted phone (Magisk) for the game from Google Play.**
+> The Android game cannot load mods by itself: its PC mod-loading code is switched off, and it reads no game content from folders you can reach without root ([evidence](reports/2026-10-31-data-only-mods.md)). Mods therefore need a small loader running inside the game. The only ways to put it there without root are to rebuild the game APK or wrap it in a container app, and both mean defeating the publisher's license protection. **We will not do that.** With Magisk, the loader is injected into your unmodified game, so your purchased copy, its files and its signature stay as they are.
+>
+> The Magisk version is being built now. The current test build embeds the loader in a locally prepared APK and is for development only — see [Can I use it?](#can-i-use-it).
 
 ### What it looks like to a player
 
@@ -26,7 +31,7 @@ The screen is in Polish on Polish phones and in English everywhere else. Backups
 
 ### Can I use it?
 
-**Not as a one-tap install yet.** The manager and loader live inside the game app, so a game APK with them added has to be prepared locally. This repository never distributes game APKs, game files or mods. Tests ran on a rooted Redmi Note 8 (Android 16); setup from a Google Play copy on an unrooted phone is not verified, and a store build may refuse to run after being re-signed. Making installation possible without rebuilding the game is the main open problem.
+**Not yet.** In the current test build the manager and loader live inside a locally prepared game APK; that route does not work with a store copy (see the requirement above) and is kept for development. The supported route will be a Magisk module plus a separate manager app, with no change to the game itself. This repository never distributes game APKs, game files or mods. Tests ran on a rooted Redmi Note 8 (Android 16).
 
 Use a backup before trying it (**Settings and backups → Save a backup of my characters**).
 
