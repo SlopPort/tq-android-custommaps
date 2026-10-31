@@ -4,7 +4,7 @@ Updated: 2026-10-31. Goal: a mod loader that a non-technical player can use: add
 
 ## Roadmap
 
-1. **Magisk route for store copies.** A data-only route is impossible (reports/2026-10-31-data-only-mods.md) and APK rebuilding would defeat the license check, which we will not do. Build: a Magisk module that injects the loader into the unmodified game, and a separate, distributable manager app (own package, no game code) that imports mods and hands them to the module.
+1. **Google Play copy.** Test the Magisk route on an unmodified store installation, and the app's own root actions (status, launch, Perf switch, backup, restore) with root granted on the phone.
 2. **7z/RAR import** on the phone (many mods ship as 7z). A public-domain LZMA decoder is a candidate.
 3. **Content-mod coverage.** Check new-character mastery selection with Masteries, LootPlus drops after the generic path, Halloween gameplay, and records the engine caches before character selection.
 4. **Custom worlds.** Turn the single-level navigation rebuild into a bounded load-time step; then generalize the Gladiators adapter to other recognized maps.
@@ -13,7 +13,7 @@ Updated: 2026-10-31. Goal: a mod loader that a non-technical player can use: add
 7. **Perf pause-menu labels** regression.
 8. Rename/describe mods in the list, show disk usage, delete a mod's character copy on request.
 
-Done on 2026-10-31: generic content mods without an allowlist, any character in a mod's copy, activation on a fast LoadGame, automatic first-start save copy, one-button restart, simplified bilingual manager, skipping loose PC extras on import, mod removal. See reports/2026-10-31-generic-content-mods.md.
+Done on 2026-10-31: Magisk module and separate app, release 1.0 (reports/2026-10-31-magisk-route.md); generic content mods without an allowlist, any character in a mod's copy, activation on a fast LoadGame, automatic first-start save copy, one-button restart, simplified bilingual manager, skipping loose PC extras on import, mod removal. See reports/2026-10-31-generic-content-mods.md.
 
 # Earlier checklist (2026-10-27)
 

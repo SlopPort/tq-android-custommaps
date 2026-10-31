@@ -2,9 +2,20 @@
 // Register before the game activity loads libtq.so. Runs after dlopen returns,
 // including ELF constructors, but before its application caller resumes.
 // Engine unload/reload is unsupported. Retain the returned listeners for life.
-function tqObserveEngineStartup(install, refuse) {
+// With options.allowRunning (Magisk injection), an engine that is already loaded
+// is installed at once; the caller must then guard what the engine read before.
+function tqObserveEngineStartup(install, refuse, options) {
   if (typeof install !== 'function' || typeof refuse !== 'function') throw Error('Startup callbacks required');
-  if (Process.findModuleByName('libtq.so') !== null) {
+  const running = Process.findModuleByName('libtq.so');
+  if (running !== null && options && options.allowRunning === true) {
+    try {
+      const outcome = install(running);
+      if (outcome && typeof outcome.then === 'function') throw Error('Engine installation must be synchronous');
+      Interceptor.flush();
+    } catch (error) { refuse(error); }
+    return [];
+  }
+  if (running !== null) {
     refuse(Error('Engine already loaded; a fresh process is required'));
     throw Error('Startup refusal returned');
   }

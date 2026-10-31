@@ -18,7 +18,8 @@ import org.json.JSONObject;
 import java.io.*;
 import java.util.concurrent.*;
 
-/** Embed in the game APK: this activity must share the game's app UID. */
+/** Two builds: embedded in a locally prepared game APK (shares the game's UID), or the standalone
+ * "Titan Quest Mods" app that reaches the unmodified game through the tq_mods Magisk module. */
 public final class ModManagerActivity extends Activity {
     static final int BG = 0xff15120e, CARD = 0xff241f18, CARD_ON = 0xff3a2f1c, GOLD = 0xffd9a441,
         TEXT = 0xfff2ebdd, MUTED = 0xffb5a991, GREEN = 0xff3e8e41, WARN = 0xffe0a030, ERROR = 0xffe06a50;
@@ -31,6 +32,10 @@ public final class ModManagerActivity extends Activity {
     private String message; private int messageColor = MUTED;
     private LinearLayout root;
     private ScrollView scroll;
+    private boolean embedded;
+    private java.util.Map<String, String> link; // Last status from the Magisk module (standalone app only).
+    private String linkProblem;
+    private static final String ROOT_INTRO = "root-intro";
     private final Runnable waitForOperation = new Runnable() {
         public void run() {
             if (isDestroyed()) return;
@@ -47,15 +52,46 @@ public final class ModManagerActivity extends Activity {
         root.setPadding(dp(18), dp(22), dp(18), dp(28));
         scroll = new ScrollView(this); scroll.setBackgroundColor(BG); scroll.setFillViewport(true);
         scroll.addView(root); setContentView(scroll);
+        embedded = getPackageName().equals(RootLink.GAME);
         try { store = new ModStore(new File(getFilesDir(), "tqmods/library")); }
         catch (IOException e) { say(Texts.importFailed(e.getMessage()), ERROR); }
         render();
     }
-    protected void onResume() { super.onResume(); waitForOperation.run(); }
+    protected void onResume() { super.onResume(); waitForOperation.run(); refresh(); }
     protected void onPause() { ui.removeCallbacks(waitForOperation); super.onPause(); }
 
     // ---- State -------------------------------------------------------------------------------
+    /** Standalone app: ask the Magisk module what the game is doing. */
+    private void refresh() {
+        if (embedded) return;
+        // Magisk turns an unanswered prompt into a lasting refusal, so ask only after the player taps the button.
+        if (!new File(getFilesDir(), "root-asked").exists()) { link = null; linkProblem = ROOT_INTRO; render(); return; }
+        io.execute(() -> {
+            java.util.Map<String, String> status = null; String problem = null;
+            try {
+                status = RootLink.run("status");
+                if (status.containsKey("missing")) problem = Texts.noModule();
+                else if ("no".equals(status.get("game"))) problem = Texts.noGame();
+            } catch (RootLink.NoRoot none) { problem = Texts.noRoot(); }
+            catch (IOException error) { problem = Texts.noModule() + " (" + error.getMessage() + ")"; }
+            final java.util.Map<String, String> s = status; final String p = problem;
+            runOnUiThread(() -> { link = s; linkProblem = p; if (!isDestroyed()) render(); });
+        });
+    }
+    /** Runs a module command off the UI thread, then refreshes the status. */
+    private void rootTask(String done, String... args) {
+        background(() -> {
+            try { RootLink.run(args); done(done, GREEN); }
+            catch (Exception error) { done(Texts.startFailed(error.getMessage()), ERROR); }
+            refresh();
+        });
+    }
+    private String gamePid() {
+        String pid = link == null ? null : link.get("pid");
+        return pid == null || pid.trim().isEmpty() ? null : pid.trim();
+    }
     private boolean engineLoaded() {
+        if (!embedded) return gamePid() != null;
         try (BufferedReader maps = new BufferedReader(new FileReader("/proc/self/maps"))) {
             String line;
             while ((line = maps.readLine()) != null) if (line.contains("libtq.so")) return true;
@@ -69,6 +105,10 @@ public final class ModManagerActivity extends Activity {
         } catch (Exception absent) { return null; }
     }
     private JSONObject report() {
+        if (!embedded) {
+            try { String r = link == null ? null : link.get("report"); return r == null || r.isEmpty() ? null : new JSONObject(r); }
+            catch (Exception broken) { return null; }
+        }
         try { return new JSONObject(new String(new AtomicFile(new File(getFilesDir(), "bootstrap-status.json")).readFully(), "UTF-8")); }
         catch (Exception absent) { return null; }
     }
@@ -81,10 +121,13 @@ public final class ModManagerActivity extends Activity {
         if (root == null) return;
         root.removeAllViews();
         boolean running = engineLoaded(), busy = isBusy() || store == null;
+        // Without root or the module, mods can still be added; only playing needs the module.
+        boolean noLink = !embedded && (link == null || linkProblem != null);
         String selected = selectedId();
         if (selected != null && !entry(selected).isDirectory()) selected = null;
         JSONObject report = report();
-        boolean current = report != null && report.optInt("pid") == android.os.Process.myPid();
+        boolean current = report != null && (embedded ? report.optInt("pid") == android.os.Process.myPid()
+            : String.valueOf(report.optInt("pid")).equals(gamePid()));
         String active = null;
         if (current) {
             JSONObject menu = report.optJSONObject("menuProbe");
@@ -96,6 +139,16 @@ public final class ModManagerActivity extends Activity {
         text(Texts.subtitle(), 15, MUTED, false).setPadding(0, dp(2), 0, dp(14));
 
         // What is happening now, in one sentence.
+        if (!embedded && (ROOT_INTRO.equals(linkProblem) || Texts.noRoot().equals(linkProblem))) {
+            banner(ROOT_INTRO.equals(linkProblem) ? Texts.rootIntro() : Texts.noRoot(), WARN, null);
+            Button allow = button(Texts.allowRoot(), GOLD, BG, 18);
+            allow.setOnClickListener(v -> {
+                try { new File(getFilesDir(), "root-asked").createNewFile(); } catch (IOException ignored) { }
+                linkProblem = null; refresh();
+            });
+            root.addView(allow, wide(dp(60), 0, dp(12)));
+        } else if (!embedded && linkProblem != null) banner(linkProblem, ERROR, null);
+        else if (!embedded && link != null && link.containsKey("blocked")) banner(Texts.blocked(link.get("blocked")), WARN, null);
         if (running && current) {
             String status = report.optString("status");
             if (status.equals("refused")) banner(Texts.stateFailed(Texts.explain(report.optString("error"))), ERROR, report.optString("error"));
@@ -109,12 +162,12 @@ public final class ModManagerActivity extends Activity {
 
         // The one big button.
         String playLabel;
-        if (busy) playLabel = Texts.working();
+        if (busy || (noLink && link == null && linkProblem == null)) playLabel = Texts.working();
         else if (running && same(selected, active)) playLabel = Texts.returnToGame();
         else if (running) playLabel = Texts.restartWith(name(selected));
         else playLabel = Texts.play(name(selected));
         Button play = button(playLabel, GREEN, Color.WHITE, 20);
-        play.setEnabled(!busy);
+        play.setEnabled(!busy && !noLink); play.setAlpha(play.isEnabled() ? 1f : 0.45f);
         final String target = selected; final String now = active;
         play.setOnClickListener(v -> onPlay(target, now, running));
         root.addView(play, wide(dp(68), dp(4), dp(20)));
@@ -145,7 +198,7 @@ public final class ModManagerActivity extends Activity {
         more.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
         more.setOnClickListener(v -> { showSettings = !showSettings; render(); });
         root.addView(more, wide(dp(52), 0, 0));
-        if (showSettings) settings(running, busy);
+        if (showSettings) settings(running, busy || noLink);
     }
 
     private void modCard(String id, String title, String hint, String badge, boolean chosen, boolean busy) {
@@ -185,13 +238,20 @@ public final class ModManagerActivity extends Activity {
         GradientDrawable shape = new GradientDrawable(); shape.setCornerRadius(dp(14)); shape.setColor(CARD); box.setBackground(shape);
         Switch perf = new Switch(this); perf.setText(Texts.perf()); perf.setTextColor(TEXT);
         perf.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17); perf.setPadding(0, dp(8), 0, dp(4));
-        try { perf.setChecked(RuntimeFeatures.perf(getFilesDir())); } catch (Exception error) { perf.setEnabled(false); }
-        perf.setOnCheckedChangeListener((b, checked) -> {
-            try { RuntimeFeatures.setPerf(getFilesDir(), checked); } catch (Exception error) { say(error.getMessage(), ERROR); render(); }
-        });
+        String perfState = embedded ? null : link == null ? "absent" : link.get("perf");
+        if (embedded) {
+            try { perf.setChecked(RuntimeFeatures.perf(getFilesDir())); } catch (Exception error) { perf.setEnabled(false); }
+            perf.setOnCheckedChangeListener((b, checked) -> {
+                try { RuntimeFeatures.setPerf(getFilesDir(), checked); } catch (Exception error) { say(error.getMessage(), ERROR); render(); }
+            });
+        } else {
+            // Perf is its own Magisk module; this switch only pauses or resumes it.
+            perf.setChecked("on".equals(perfState)); perf.setEnabled(!busy && !"absent".equals(perfState));
+            perf.setOnCheckedChangeListener((b, checked) -> rootTask(null, "perf", checked ? "on" : "off"));
+        }
         box.addView(perf);
-        TextView ph = label(Texts.perfHint(), 13, MUTED, false); ph.setPadding(0, 0, 0, dp(10)); box.addView(ph);
-        if (getPackageName().equals("com.hg.titanquestultimate")) {
+        TextView ph = label("absent".equals(perfState) ? Texts.perfMissing() : Texts.perfHint(), 13, MUTED, false); ph.setPadding(0, 0, 0, dp(10)); box.addView(ph);
+        {
             settingButton(box, Texts.backup(), busy, v -> {
                 if (!stopped()) return;
                 Intent target = new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -209,11 +269,14 @@ public final class ModManagerActivity extends Activity {
                     }).show();
             });
         }
-        settingButton(box, Texts.shortcut(), busy, v -> pinShortcut());
+        if (embedded) settingButton(box, Texts.shortcut(), busy, v -> pinShortcut());
         if (running) settingButton(box, Texts.closeGame(), busy, v -> new AlertDialog.Builder(this)
             .setTitle(Texts.saveFirstTitle()).setMessage(Texts.saveFirstBody())
             .setNegativeButton(Texts.cancel(), null)
-            .setPositiveButton(Texts.savedClose(), (d, w) -> { if (!isBusy()) android.os.Process.killProcess(android.os.Process.myPid()); }).show());
+            .setPositiveButton(Texts.savedClose(), (d, w) -> {
+                if (isBusy()) return;
+                if (embedded) android.os.Process.killProcess(android.os.Process.myPid()); else rootTask(null, "stop");
+            }).show());
         root.addView(box, wide(-2, dp(4), 0));
     }
     private void settingButton(LinearLayout box, String label, boolean busy, View.OnClickListener action) {
@@ -255,7 +318,9 @@ public final class ModManagerActivity extends Activity {
         if (selected != null && !ModKind.playable(ModKind.of(store, entry(selected)))) { say(Texts.unsupportedMap(), WARN); render(); return; }
         if (!running) { startGame(false); return; }
         if (same(selected, active)) {
-            Intent game = new Intent(); game.setClassName(getPackageName(), "com.hg.titanquest.MainActivity");
+            Intent game = embedded ? new Intent() : getPackageManager().getLaunchIntentForPackage(RootLink.GAME);
+            if (game == null) { say(Texts.noGame(), ERROR); render(); return; }
+            if (embedded) game.setClassName(getPackageName(), "com.hg.titanquest.MainActivity");
             game.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(game); return;
         }
         new AlertDialog.Builder(this).setTitle(Texts.saveFirstTitle()).setMessage(Texts.restartBody(name(selected)))
@@ -263,6 +328,12 @@ public final class ModManagerActivity extends Activity {
             .setPositiveButton(Texts.savedRestart(), (d, w) -> { if (!isBusy()) startGame(true); }).show();
     }
     private void startGame(boolean restart) {
+        if (!embedded) {
+            // The module copies the mod into the game, makes the character copy once and starts the game.
+            if (restart) rootTask(null, "launch", getFilesDir().getPath(), "restart");
+            else rootTask(null, "launch", getFilesDir().getPath());
+            return;
+        }
         Intent game = new Intent(); game.setClassName(getPackageName(), "org.tqmods.GameBootstrapActivity");
         game.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         game.putExtra("restart", restart);
@@ -312,20 +383,33 @@ public final class ModManagerActivity extends Activity {
         });
     }
     private void writeSelection(String id) throws Exception {
+        writeRequest(id, "tqmods/request.json", false);
+        // The standalone app's files are copied into the game folder; the game reads paths there.
+        if (!embedded) writeRequest(id, "tqmods/request-game.json", true);
+    }
+    private String path(File file, boolean inGame) {
+        String p = file.getPath();
+        if (!inGame) return p;
+        // The library may be reached through /data/user/0 or its /data/data alias.
+        String[] own = {getFilesDir().getPath(), "/data/data/" + getPackageName() + "/files", "/data/user/0/" + getPackageName() + "/files"};
+        for (String prefix : own) if (p.startsWith(prefix + "/")) return RootLink.GAME_FILES + p.substring(prefix.length());
+        throw new IllegalStateException("Mod outside app storage: " + p);
+    }
+    private void writeRequest(String id, String target, boolean inGame) throws Exception {
         JSONObject request = new JSONObject(); request.put("schema", 1);
         request.put("id", id == null ? JSONObject.NULL : id);
         File database = id == null ? null : store.database(entry(id));
-        request.put("database", database == null ? JSONObject.NULL : database.getPath());
+        request.put("database", database == null ? JSONObject.NULL : path(database, inGame));
         request.put("size", database == null ? 0 : database.length());
         request.put("name", id == null ? JSONObject.NULL : ModStore.title(entry(id)));
         request.put("customWorld", id != null && store.customWorld(entry(id)));
         org.json.JSONArray resources = new org.json.JSONArray();
         if (id != null) for (File resource : store.resources(entry(id))) {
-            JSONObject item = new JSONObject(); item.put("path", resource.getPath());
+            JSONObject item = new JSONObject(); item.put("path", path(resource, inGame));
             item.put("size", resource.length()); resources.put(item);
         }
         request.put("resources", resources);
-        AtomicFile file = new AtomicFile(new File(getFilesDir(), "tqmods/request.json"));
+        AtomicFile file = new AtomicFile(new File(getFilesDir(), target));
         FileOutputStream stream = null;
         try {
             stream = file.startWrite(); stream.write(request.toString().getBytes("UTF-8"));
@@ -349,13 +433,21 @@ public final class ModManagerActivity extends Activity {
     }
     private void exportBackup(android.net.Uri target) {
         background(() -> {
-            File snapshot = null;
+            File snapshot = null, staging = null;
             try {
-                File external = getExternalFilesDir(null);
-                if (external == null) throw new IOException("Game storage unavailable");
+                File source;
+                if (embedded) {
+                    File external = getExternalFilesDir(null);
+                    if (external == null) throw new IOException("Game storage unavailable");
+                    source = new File(external, "Preferences/SaveData");
+                } else {
+                    staging = new File(getCacheDir(), "save-backup");
+                    RootLink.run("backup", staging.getPath()); // Root copies the characters here for packing.
+                    source = new File(staging, "SaveData");
+                }
                 snapshot = File.createTempFile("save-backup-", ".zip", getCacheDir());
                 int count;
-                try (OutputStream output = new FileOutputStream(snapshot)) { count = SaveBackup.write(new File(external, "Preferences/SaveData"), output); }
+                try (OutputStream output = new FileOutputStream(snapshot)) { count = SaveBackup.write(source, output); }
                 try (InputStream input = new FileInputStream(snapshot); OutputStream output = getContentResolver().openOutputStream(target, "wt")) {
                     if (output == null) throw new IOException("Cannot open backup destination");
                     byte[] buffer = new byte[65536]; int read;
@@ -363,15 +455,13 @@ public final class ModManagerActivity extends Activity {
                 }
                 done(Texts.backupDone(count), GREEN);
             } catch (Exception error) { done(Texts.backupFailed(error.getMessage()), ERROR); }
-            finally { if (snapshot != null) snapshot.delete(); }
+            finally { if (snapshot != null) snapshot.delete(); deleteTree(staging); }
         });
     }
     private void restoreBackup(android.net.Uri source) {
         background(() -> {
             File snapshot = null;
             try {
-                File external = getExternalFilesDir(null);
-                if (external == null) throw new IOException("Game storage unavailable");
                 snapshot = File.createTempFile("restore-", ".zip", getCacheDir());
                 try (InputStream input = getContentResolver().openInputStream(source); OutputStream output = new FileOutputStream(snapshot)) {
                     if (input == null) throw new IOException("Cannot open backup");
@@ -381,11 +471,28 @@ public final class ModManagerActivity extends Activity {
                         output.write(buffer, 0, count);
                     }
                 }
-                SaveRestore.restore(snapshot, new File(external, "Preferences/SaveData"));
+                if (embedded) {
+                    File external = getExternalFilesDir(null);
+                    if (external == null) throw new IOException("Game storage unavailable");
+                    SaveRestore.restore(snapshot, new File(external, "Preferences/SaveData"));
+                } else {
+                    // Unpack and check every file here; root then swaps it in and keeps the current characters.
+                    File staging = new File(getCacheDir(), "restore"); deleteTree(staging);
+                    File saves = new File(staging, "SaveData");
+                    if (!saves.mkdirs()) throw new IOException("Cannot prepare restore");
+                    SaveRestore.restore(snapshot, saves);
+                    RootLink.run("restore", staging.getPath());
+                }
                 done(Texts.restoreDone(), GREEN);
             } catch (Exception error) { done(Texts.restoreFailed(error.getMessage()), ERROR); }
             finally { if (snapshot != null) snapshot.delete(); }
         });
+    }
+    private static void deleteTree(File file) {
+        if (file == null || !file.exists()) return;
+        File[] children = java.nio.file.Files.isSymbolicLink(file.toPath()) ? null : file.listFiles();
+        if (children != null) for (File child : children) deleteTree(child);
+        file.delete();
     }
     private void stageUri(final android.net.Uri uri) {
         background(() -> {

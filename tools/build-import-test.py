@@ -16,6 +16,7 @@ p.add_argument('--build-tools', default='35.0.0')
 p.add_argument('--platform', default='android-36')
 p.add_argument('--out', required=True, type=pathlib.Path)
 p.add_argument('--with-bootstrap', action='store_true', help='Include original bootstrap activity classes for local embedding; no native library is bundled')
+p.add_argument('--manager', action='store_true', help='Build the distributable Titan Quest Mods app (package org.tqmods.manager) for the Magisk module')
 a = p.parse_args()
 root = pathlib.Path(__file__).resolve().parents[1]
 suffix = '.exe' if __import__('os').name == 'nt' else ''
@@ -33,11 +34,15 @@ classes.mkdir(); dex.mkdir()
 shutil.copyfile(android, a.out / 'android.jar')
 android = a.out / 'android.jar'
 manifest = a.out / 'AndroidManifest.xml'
-manifest.write_text('''<manifest xmlns:android="http://schemas.android.com/apk/res/android"
- package="org.tqmods.importtest" android:versionCode="1" android:versionName="0.1">
+package, label, version = (('org.tqmods.manager', 'Titan Quest Mods', '1.0') if a.manager
+                           else ('org.tqmods.importtest', 'TQ Mods Import Test', '0.1'))
+icon = ' android:icon="@drawable/icon"' if a.manager else ''
+manifest.write_text(f'''<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+ package="{package}" android:versionCode="1" android:versionName="{version}">
  <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="36"/>
- <application android:label="TQ Mods Import Test" android:allowBackup="false"
- android:theme="@android:style/Theme.Material.Light.NoActionBar">
+ <queries><package android:name="com.hg.titanquestultimate"/></queries>
+ <application android:label="{label}"{icon} android:allowBackup="false"
+ android:theme="@android:style/Theme.Material.NoActionBar">
  <activity android:name="org.tqmods.ModManagerActivity" android:exported="true">
  <intent-filter><action android:name="android.intent.action.MAIN"/>
  <category android:name="android.intent.category.LAUNCHER"/></intent-filter>
@@ -60,11 +65,12 @@ with zipfile.ZipFile(jar, 'w') as z:
 run(java, '-cp', bt / 'lib/d8.jar', 'com.android.tools.r8.D8', '--min-api', '28',
     '--lib', android, '--output', dex, jar)
 unsigned = a.out / 'unsigned.apk'
-run(bt / ('aapt' + suffix), 'package', '-f', '-M', manifest, '-I', android, '-F', unsigned)
+res = ['-S', root / 'android/manager/res'] if a.manager else []
+run(bt / ('aapt' + suffix), 'package', '-f', '-M', manifest, *res, '-I', android, '-F', unsigned)
 with zipfile.ZipFile(unsigned, 'a') as z:
     for file in dex.glob('*.dex'):
         z.write(file, file.name)
-aligned = a.out / 'import-test-unsigned.apk'
+aligned = a.out / ('titan-quest-mods-unsigned.apk' if a.manager else 'import-test-unsigned.apk')
 run(bt / ('zipalign' + suffix), '-f', '4', unsigned, aligned)
 run(bt / ('zipalign' + suffix), '-c', '4', aligned)
 print('Unsigned standalone test APK:', aligned)

@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
+const c={};vm.createContext(c);
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../bootstrap/magisk-request.js'),'utf8'),c);
+const id='0123abcd-0000-4000-8000-00000000abcd',roots=['/game/profiles','/alias/profiles'];
+const props=t=>p=>{assert.equal(p,'/game/profiles/'+id+'/profile.properties');if(t===null)throw Error('ENOENT');return t;};
+const ok='#Independent copy\nschema=1\nid='+id+'\nfiles=12\nruntimeBound=false\n';
+const r=c.tqMagiskRequest({schema:1,id,database:'/db.arz',preparedProfile:{root:'/evil'}},42,true,roots,props(ok));
+assert.equal(r.startupPid,42);assert.equal(r.perfEnabled,true);
+assert.deepEqual(JSON.parse(JSON.stringify(r.preparedProfile)),{root:'/game/profiles/'+id+'/SaveData',runtimeBound:false});
+const v=c.tqMagiskRequest({schema:1,id:null,database:null},7,false,roots,()=>{throw Error('unused');});
+assert.equal(v.id,null);assert.equal(v.preparedProfile,undefined);assert.equal(v.perfEnabled,false);
+assert.throws(()=>c.tqMagiskRequest({schema:1,id,database:'/d.arz'},1,false,roots,props(null)),/separate save copy/);
+assert.throws(()=>c.tqMagiskRequest({schema:1,id,database:'/d.arz'},1,false,roots,props('schema=1\nid=other\n')),/does not match/);
+assert.throws(()=>c.tqMagiskRequest({schema:1,id:'../x',database:'/d.arz'},1,false,roots,props(ok)),/Invalid profile/);
+assert.throws(()=>c.tqMagiskRequest({schema:2,id:null},1,false,roots,props(ok)),/schema/);
+console.log('PASS: magisk request binds pid, checks the save copy record, rejects bad ids and schemas');

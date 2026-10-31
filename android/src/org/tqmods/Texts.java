@@ -80,6 +80,16 @@ final class Texts {
     static String closeGameFirst() { return t("Close the game first (Settings → Close the game), then try again.", "Najpierw zamknij grę (Ustawienia → Zamknij grę), potem spróbuj ponownie."); }
     static String removed() { return t("Mod removed.", "Mod usunięty."); }
     static String unsupportedMap() { return t("Custom maps cannot be played yet. Choose another mod.", "Własnych map nie da się jeszcze grać. Wybierz inny mod."); }
+    static String rootIntro() { return t("To start the game with mods, this app needs root access from Magisk. Tap the button below, then tap Allow (Grant) in the Magisk window within a few seconds.",
+        "Żeby uruchamiać grę z modami, aplikacja potrzebuje dostępu roota z Magiska. Naciśnij przycisk poniżej, a potem w ciągu kilku sekund naciśnij Zezwól w oknie Magiska."); }
+    static String allowRoot() { return t("Allow root access", "Zezwól na dostęp roota"); }
+    static String noRoot() { return t("Root access was refused. Open Magisk → Superuser, switch on Titan Quest Mods, then tap the button again.",
+        "Dostęp roota został odrzucony. Otwórz Magisk → Superużytkownik, włącz Titan Quest Mods i naciśnij przycisk ponownie."); }
+    static String noModule() { return t("The Titan Quest Mods loader module is not installed. Install tq-mods-magisk.zip in Magisk (Modules → Install from storage) and restart the phone.",
+        "Nie zainstalowano modułu loadera. Zainstaluj tq-mods-magisk.zip w Magisku (Moduły → Instaluj z pamięci) i uruchom telefon ponownie."); }
+    static String noGame() { return t("Titan Quest is not installed on this phone.", "Titan Quest nie jest zainstalowany na tym telefonie."); }
+    static String blocked(String why) { return t("Mods are paused: ", "Mody są wstrzymane: ") + why + "."; }
+    static String perfMissing() { return t("Needs the TQ Android Perf Magisk module (2.4 or newer).", "Wymaga modułu Magisk TQ Android Perf (2.4 lub nowszy)."); }
     static String details() { return t("Details: ", "Szczegóły: "); }
 
     /** Turns loader errors into one plain sentence. */
@@ -92,6 +102,9 @@ final class Texts {
         if (e.contains("records not found") || e.contains("ARZ") || e.contains("resource") || e.contains("Mod text"))
             return t("this mod could not be loaded on Android.", "tego moda nie udało się załadować na Androidzie.");
         if (e.contains("save copy") || e.contains("profile")) return t("the separate character copy for this mod is missing.", "brakuje osobnej kopii postaci dla tego moda.");
+        if (e.contains("before the loader was ready")) return t("the character list was opened before the mod loader was ready. Start again and wait a few seconds in the main menu.",
+            "lista postaci została otwarta, zanim loader był gotowy. Uruchom ponownie i poczekaj kilka sekund w menu głównym.");
+        if (e.contains("game is running")) return t("the game is still running. Close it first.", "gra nadal działa. Najpierw ją zamknij.");
         if (e.contains("timed out")) return t("the game did not reach the character list in time.", "gra nie doszła do listy postaci na czas.");
         return t("an unexpected error.", "nieoczekiwany błąd.");
     }

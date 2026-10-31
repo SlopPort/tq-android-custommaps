@@ -7,7 +7,15 @@ rpc.exports.init = function(stage, parameters) {
   const abort=new NativeFunction(Process.getModuleByName('libc.so').getExportByName('abort'),'void',[],{exceptions:'propagate'});
   const refuse=e=>{report.status='refused';report.error=String(e);try{write();}finally{abort();}};
   try {
-    const text=File.readAllText(parameters.selectionRequest),request=JSON.parse(text);
+    const magisk=parameters.mode==='magisk';
+    let text;
+    try{text=File.readAllText(parameters.selectionRequest);}
+    catch(e){if(!magisk)throw e;text='{"schema":1,"id":null,"database":null}';} // Never used the manager: original game.
+    let request=JSON.parse(text);
+    if(magisk){request=tqMagiskRequest(request,Process.id,parameters.perfEnabled,parameters.profilesRoot,p=>File.readAllText(p));text=JSON.stringify(request);}
+    // Injected after the engine started (Magisk): safe only while the character list was never read.
+    const late=magisk&&Process.findModuleByName('libtq.so')!==null;
+    report.late=late;
     if(request.startupPid!==Process.id)throw Error('Selection belongs to another startup');
     const selection=tqResolveSelection(text,parameters.profiles,parameters.libraryRoot,p=>File.readAllBytes(p));
     if(!['vanilla','recognized','content','map-preflight-verified'].includes(selection.status))
@@ -76,20 +84,23 @@ rpc.exports.init = function(stage, parameters) {
       };
       let cloudPolicy;
       if(profile){cloudPolicy=tqInstallLocalOnlyCloud(engine,gate,refuse);held.push(cloudPolicy);report.cloud=cloudPolicy.report;}
-      if(profile)held.push(tqInstallSaveProfile(engine,gate,{...profile,cloudPolicy,beforeLoad(){
+      let saveRuntime=null;
+      if(profile)held.push(saveRuntime=tqInstallSaveProfile(engine,gate,{...profile,cloudPolicy,beforeLoad(){
         if(!activate()||report.status!=='ready'||!report.modsActivated)throw Error('Mod activation is not ready; restart and wait at character selection');
       },onReport:r=>{report.saveProfile=r;write();}}));
       held.push(Interceptor.attach(gate.address(engine,'_ZN4GAME8PlayMenu6UpdateEv'),{onLeave(){
+        if(calls===0&&late&&saveRuntime&&saveRuntime.report.redirects===0){done=true;refuse(Error('Character list opened before the loader was ready'));return;}
         if(done)return;
         if(++calls>600){done=true;refuse(Error('Menu activation timed out'));return;}
         try{activate();}catch(e){refuse(e);}
       }}));
       report.status='waiting-for-menu';write();
-    },refuse));
+    },refuse,{allowRunning:magisk}));
     if(request.perfEnabled===true){
       if(isMap)report.perf={requested:true,status:'waiting-for-map'};
       else startPerf();
     } else report.perf={requested:false,status:'off'};
-    report.status='waiting-for-engine';write();
+    if(report.status==='preparing')report.status='waiting-for-engine'; // A late install already moved on.
+    write();
   }catch(e){refuse(e);}
 };
